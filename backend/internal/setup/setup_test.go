@@ -87,3 +87,23 @@ func TestWriteConfigFileKeepsDefaultUserConcurrency(t *testing.T) {
 		t.Fatalf("config missing default user concurrency, got:\n%s", string(data))
 	}
 }
+
+func TestWriteConfigFileIncludesUpdateProxyURL(t *testing.T) {
+	t.Setenv("DATA_DIR", t.TempDir())
+
+	if err := writeConfigFile(&SetupConfig{
+		Update: UpdateConfig{ProxyURL: "http://host.docker.internal:10809"},
+	}); err != nil {
+		t.Fatalf("writeConfigFile() error = %v", err)
+	}
+
+	data, err := os.ReadFile(GetConfigFilePath())
+	if err != nil {
+		t.Fatalf("ReadFile() error = %v", err)
+	}
+
+	content := string(data)
+	if !strings.Contains(content, "update:") || !strings.Contains(content, "proxy_url: http://host.docker.internal:10809") {
+		t.Fatalf("config missing update proxy URL, got:\n%s", content)
+	}
+}

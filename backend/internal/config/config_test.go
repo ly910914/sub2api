@@ -392,6 +392,20 @@ func TestLoadJWTAccessTokenExpireMinutesFromEnv(t *testing.T) {
 	}
 }
 
+func TestLoadUpdateProxyURLFromEnv(t *testing.T) {
+	resetViperWithJWTSecret(t)
+	t.Setenv("UPDATE_PROXY_URL", "http://127.0.0.1:10809")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error: %v", err)
+	}
+
+	if cfg.Update.ProxyURL != "http://127.0.0.1:10809" {
+		t.Fatalf("Update.ProxyURL = %q, want %q", cfg.Update.ProxyURL, "http://127.0.0.1:10809")
+	}
+}
+
 func TestLoadDefaultDatabaseSSLMode(t *testing.T) {
 	resetViperWithJWTSecret(t)
 
