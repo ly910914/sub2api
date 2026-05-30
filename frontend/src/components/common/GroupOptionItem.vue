@@ -9,6 +9,7 @@
       <GroupBadge
         :name="name"
         :platform="platform"
+        :icon-platforms="iconPlatforms"
         :subscription-type="subscriptionType"
         :show-rate="false"
         class="groupOptionItemBadge"
@@ -57,6 +58,7 @@ import type { SubscriptionType, GroupPlatform } from '@/types'
 interface Props {
   name: string
   platform: GroupPlatform
+  iconPlatforms?: GroupPlatform[]
   subscriptionType?: SubscriptionType
   rateMultiplier?: number
   userRateMultiplier?: number | null

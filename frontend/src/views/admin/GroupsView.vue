@@ -109,7 +109,7 @@
                       : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
               ]"
             >
-              <PlatformIcon :platform="value" size="xs" />
+              <GroupPlatformIcons :platform="value" size="xs" />
               {{ t("admin.groups.platforms." + value) }}
             </span>
           </template>
@@ -3052,7 +3052,7 @@ import BaseDialog from "@/components/common/BaseDialog.vue";
 import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
 import EmptyState from "@/components/common/EmptyState.vue";
 import Select from "@/components/common/Select.vue";
-import PlatformIcon from "@/components/common/PlatformIcon.vue";
+import GroupPlatformIcons from "@/components/common/GroupPlatformIcons.vue";
 import Icon from "@/components/icons/Icon.vue";
 import GroupRateMultipliersModal from "@/components/admin/group/GroupRateMultipliersModal.vue";
 import GroupRPMOverridesModal from "@/components/admin/group/GroupRPMOverridesModal.vue";

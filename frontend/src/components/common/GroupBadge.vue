@@ -6,7 +6,7 @@
     ]"
   >
     <!-- Platform logo -->
-    <PlatformIcon v-if="platform" :platform="platform" size="sm" />
+    <GroupPlatformIcons :platform="platform" :platforms="iconPlatforms" size="sm" />
     <!-- Group name -->
     <span class="truncate">{{ name }}</span>
     <!-- Right side label -->
@@ -27,11 +27,12 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { SubscriptionType, GroupPlatform } from '@/types'
-import PlatformIcon from './PlatformIcon.vue'
+import GroupPlatformIcons from './GroupPlatformIcons.vue'
 
 interface Props {
   name: string
   platform?: GroupPlatform
+  iconPlatforms?: GroupPlatform[]
   subscriptionType?: SubscriptionType
   rateMultiplier?: number
   userRateMultiplier?: number | null // 用户专属倍率
