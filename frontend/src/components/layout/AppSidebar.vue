@@ -18,6 +18,7 @@
         </span>
         <!-- Version Badge -->
         <VersionBadge :version="siteVersion" />
+        <span class="sidebar-update-test-badge">更新测试 v0.1.136</span>
       </div>
     </div>
 
@@ -928,6 +929,27 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.sidebar-update-test-badge {
+  display: inline-flex;
+  margin-top: 0.25rem;
+  max-width: 100%;
+  align-items: center;
+  border-radius: 0.375rem;
+  border: 1px solid rgb(34 197 94 / 0.35);
+  background: rgb(240 253 244);
+  padding: 0.125rem 0.375rem;
+  color: rgb(21 128 61);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1rem;
+}
+
+.dark .sidebar-update-test-badge {
+  border-color: rgb(74 222 128 / 0.28);
+  background: rgb(20 83 45 / 0.28);
+  color: rgb(134 239 172);
 }
 
 .sidebar-link-collapsed {
