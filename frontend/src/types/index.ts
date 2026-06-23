@@ -1324,6 +1324,61 @@ export interface UsageCleanupTask {
   updated_at: string
 }
 
+// ==================== Admin Billing Types ====================
+
+export interface AdminBillingRecord {
+  id: number
+  person_name: string
+  source: string
+  cost: number
+  profit: number
+  revenue: number
+  occurred_at: string
+  note?: string | null
+  created_by: number
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateAdminBillingRecordRequest {
+  person_name: string
+  source?: string
+  cost: number
+  profit: number
+  occurred_at?: string | number | null
+  note?: string | null
+}
+
+export type UpdateAdminBillingRecordRequest = CreateAdminBillingRecordRequest
+
+export interface AdminBillingSummary {
+  total_cost: number
+  total_profit: number
+  total_revenue: number
+  net_profit: number
+  count: number
+}
+
+export interface AdminBillingPersonStat {
+  person_name: string
+  total_cost: number
+  total_profit: number
+  total_revenue: number
+  count: number
+}
+
+export interface AdminBillingTrendPoint {
+  date: string
+  cost: number
+  profit: number
+}
+
+export interface AdminBillingStats {
+  summary: AdminBillingSummary
+  per_person: AdminBillingPersonStat[]
+  trend: AdminBillingTrendPoint[]
+}
+
 export interface RedeemCode {
   id: number
   code: string

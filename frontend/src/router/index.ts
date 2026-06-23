@@ -206,6 +206,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/image',
+    name: 'ImageChat',
+    component: () => import('@/views/user/ImageChatView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Image',
+      titleKey: 'nav.imageGeneration',
+      descriptionKey: 'images.startDescription'
+    }
+  },
+  {
     path: '/usage',
     name: 'Usage',
     component: () => import('@/views/user/UsageView.vue'),
@@ -572,6 +584,18 @@ const routes: RouteRecordRaw[] = [
       title: 'Usage Records',
       titleKey: 'admin.usage.title',
       descriptionKey: 'admin.usage.description'
+    }
+  },
+  {
+    path: '/admin/billing',
+    name: 'AdminBilling',
+    component: () => import('@/views/admin/BillingView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Manual Billing',
+      titleKey: 'admin.billing.title',
+      descriptionKey: 'admin.billing.description'
     }
   },
   {

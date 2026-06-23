@@ -7,6 +7,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/accountgroup"
+	"github.com/Wei-Shaw/sub2api/ent/adminbillingrecord"
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
@@ -262,6 +263,61 @@ func init() {
 	accountgroupDescCreatedAt := accountgroupFields[3].Descriptor()
 	// accountgroup.DefaultCreatedAt holds the default value on creation for the created_at field.
 	accountgroup.DefaultCreatedAt = accountgroupDescCreatedAt.Default.(func() time.Time)
+	adminbillingrecordMixin := schema.AdminBillingRecord{}.Mixin()
+	adminbillingrecordMixinHooks1 := adminbillingrecordMixin[1].Hooks()
+	adminbillingrecord.Hooks[0] = adminbillingrecordMixinHooks1[0]
+	adminbillingrecordMixinInters1 := adminbillingrecordMixin[1].Interceptors()
+	adminbillingrecord.Interceptors[0] = adminbillingrecordMixinInters1[0]
+	adminbillingrecordMixinFields0 := adminbillingrecordMixin[0].Fields()
+	_ = adminbillingrecordMixinFields0
+	adminbillingrecordFields := schema.AdminBillingRecord{}.Fields()
+	_ = adminbillingrecordFields
+	// adminbillingrecordDescCreatedAt is the schema descriptor for created_at field.
+	adminbillingrecordDescCreatedAt := adminbillingrecordMixinFields0[0].Descriptor()
+	// adminbillingrecord.DefaultCreatedAt holds the default value on creation for the created_at field.
+	adminbillingrecord.DefaultCreatedAt = adminbillingrecordDescCreatedAt.Default.(func() time.Time)
+	// adminbillingrecordDescUpdatedAt is the schema descriptor for updated_at field.
+	adminbillingrecordDescUpdatedAt := adminbillingrecordMixinFields0[1].Descriptor()
+	// adminbillingrecord.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	adminbillingrecord.DefaultUpdatedAt = adminbillingrecordDescUpdatedAt.Default.(func() time.Time)
+	// adminbillingrecord.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	adminbillingrecord.UpdateDefaultUpdatedAt = adminbillingrecordDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// adminbillingrecordDescPersonName is the schema descriptor for person_name field.
+	adminbillingrecordDescPersonName := adminbillingrecordFields[0].Descriptor()
+	// adminbillingrecord.PersonNameValidator is a validator for the "person_name" field. It is called by the builders before save.
+	adminbillingrecord.PersonNameValidator = func() func(string) error {
+		validators := adminbillingrecordDescPersonName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(person_name string) error {
+			for _, fn := range fns {
+				if err := fn(person_name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// adminbillingrecordDescSource is the schema descriptor for source field.
+	adminbillingrecordDescSource := adminbillingrecordFields[1].Descriptor()
+	// adminbillingrecord.DefaultSource holds the default value on creation for the source field.
+	adminbillingrecord.DefaultSource = adminbillingrecordDescSource.Default.(string)
+	// adminbillingrecord.SourceValidator is a validator for the "source" field. It is called by the builders before save.
+	adminbillingrecord.SourceValidator = adminbillingrecordDescSource.Validators[0].(func(string) error)
+	// adminbillingrecordDescCost is the schema descriptor for cost field.
+	adminbillingrecordDescCost := adminbillingrecordFields[2].Descriptor()
+	// adminbillingrecord.DefaultCost holds the default value on creation for the cost field.
+	adminbillingrecord.DefaultCost = adminbillingrecordDescCost.Default.(float64)
+	// adminbillingrecordDescProfit is the schema descriptor for profit field.
+	adminbillingrecordDescProfit := adminbillingrecordFields[3].Descriptor()
+	// adminbillingrecord.DefaultProfit holds the default value on creation for the profit field.
+	adminbillingrecord.DefaultProfit = adminbillingrecordDescProfit.Default.(float64)
+	// adminbillingrecordDescOccurredAt is the schema descriptor for occurred_at field.
+	adminbillingrecordDescOccurredAt := adminbillingrecordFields[4].Descriptor()
+	// adminbillingrecord.DefaultOccurredAt holds the default value on creation for the occurred_at field.
+	adminbillingrecord.DefaultOccurredAt = adminbillingrecordDescOccurredAt.Default.(func() time.Time)
 	announcementFields := schema.Announcement{}.Fields()
 	_ = announcementFields
 	// announcementDescTitle is the schema descriptor for title field.

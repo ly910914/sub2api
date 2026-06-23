@@ -56,6 +56,9 @@ func RegisterAdminRoutes(
 		// 优惠码管理
 		registerPromoCodeRoutes(admin, h)
 
+		// 管理员手工账单
+		registerAdminBillingRoutes(admin, h)
+
 		// 系统设置
 		registerSettingsRoutes(admin, h)
 
@@ -430,6 +433,19 @@ func registerPromoCodeRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		promoCodes.PUT("/:id", h.Admin.Promo.Update)
 		promoCodes.DELETE("/:id", h.Admin.Promo.Delete)
 		promoCodes.GET("/:id/usages", h.Admin.Promo.GetUsages)
+	}
+}
+
+func registerAdminBillingRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	billing := admin.Group("/billing-records")
+	{
+		billing.GET("", h.Admin.Billing.List)
+		billing.POST("", h.Admin.Billing.Create)
+		billing.GET("/stats", h.Admin.Billing.Stats)
+		billing.GET("/suggestions", h.Admin.Billing.Suggestions)
+		billing.GET("/source-suggestions", h.Admin.Billing.SourceSuggestions)
+		billing.PUT("/:id", h.Admin.Billing.Update)
+		billing.DELETE("/:id", h.Admin.Billing.Delete)
 	}
 }
 

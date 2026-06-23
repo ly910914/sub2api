@@ -17,6 +17,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/accountgroup"
+	"github.com/Wei-Shaw/sub2api/ent/adminbillingrecord"
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
@@ -65,6 +66,8 @@ type Client struct {
 	Account *AccountClient
 	// AccountGroup is the client for interacting with the AccountGroup builders.
 	AccountGroup *AccountGroupClient
+	// AdminBillingRecord is the client for interacting with the AdminBillingRecord builders.
+	AdminBillingRecord *AdminBillingRecordClient
 	// Announcement is the client for interacting with the Announcement builders.
 	Announcement *AnnouncementClient
 	// AnnouncementRead is the client for interacting with the AnnouncementRead builders.
@@ -143,6 +146,7 @@ func (c *Client) init() {
 	c.APIKey = NewAPIKeyClient(c.config)
 	c.Account = NewAccountClient(c.config)
 	c.AccountGroup = NewAccountGroupClient(c.config)
+	c.AdminBillingRecord = NewAdminBillingRecordClient(c.config)
 	c.Announcement = NewAnnouncementClient(c.config)
 	c.AnnouncementRead = NewAnnouncementReadClient(c.config)
 	c.AuthIdentity = NewAuthIdentityClient(c.config)
@@ -270,6 +274,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		APIKey:                        NewAPIKeyClient(cfg),
 		Account:                       NewAccountClient(cfg),
 		AccountGroup:                  NewAccountGroupClient(cfg),
+		AdminBillingRecord:            NewAdminBillingRecordClient(cfg),
 		Announcement:                  NewAnnouncementClient(cfg),
 		AnnouncementRead:              NewAnnouncementReadClient(cfg),
 		AuthIdentity:                  NewAuthIdentityClient(cfg),
@@ -324,6 +329,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		APIKey:                        NewAPIKeyClient(cfg),
 		Account:                       NewAccountClient(cfg),
 		AccountGroup:                  NewAccountGroupClient(cfg),
+		AdminBillingRecord:            NewAdminBillingRecordClient(cfg),
 		Announcement:                  NewAnnouncementClient(cfg),
 		AnnouncementRead:              NewAnnouncementReadClient(cfg),
 		AuthIdentity:                  NewAuthIdentityClient(cfg),
@@ -385,8 +391,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.AuthIdentity, c.AuthIdentityChannel, c.ChannelMonitor,
+		c.APIKey, c.Account, c.AccountGroup, c.AdminBillingRecord, c.Announcement,
+		c.AnnouncementRead, c.AuthIdentity, c.AuthIdentityChannel, c.ChannelMonitor,
 		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
@@ -404,8 +410,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.AuthIdentity, c.AuthIdentityChannel, c.ChannelMonitor,
+		c.APIKey, c.Account, c.AccountGroup, c.AdminBillingRecord, c.Announcement,
+		c.AnnouncementRead, c.AuthIdentity, c.AuthIdentityChannel, c.ChannelMonitor,
 		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
@@ -428,6 +434,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Account.mutate(ctx, m)
 	case *AccountGroupMutation:
 		return c.AccountGroup.mutate(ctx, m)
+	case *AdminBillingRecordMutation:
+		return c.AdminBillingRecord.mutate(ctx, m)
 	case *AnnouncementMutation:
 		return c.Announcement.mutate(ctx, m)
 	case *AnnouncementReadMutation:
@@ -992,6 +1000,141 @@ func (c *AccountGroupClient) mutate(ctx context.Context, m *AccountGroupMutation
 		return (&AccountGroupDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AccountGroup mutation op: %q", m.Op())
+	}
+}
+
+// AdminBillingRecordClient is a client for the AdminBillingRecord schema.
+type AdminBillingRecordClient struct {
+	config
+}
+
+// NewAdminBillingRecordClient returns a client for the AdminBillingRecord from the given config.
+func NewAdminBillingRecordClient(c config) *AdminBillingRecordClient {
+	return &AdminBillingRecordClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `adminbillingrecord.Hooks(f(g(h())))`.
+func (c *AdminBillingRecordClient) Use(hooks ...Hook) {
+	c.hooks.AdminBillingRecord = append(c.hooks.AdminBillingRecord, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `adminbillingrecord.Intercept(f(g(h())))`.
+func (c *AdminBillingRecordClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AdminBillingRecord = append(c.inters.AdminBillingRecord, interceptors...)
+}
+
+// Create returns a builder for creating a AdminBillingRecord entity.
+func (c *AdminBillingRecordClient) Create() *AdminBillingRecordCreate {
+	mutation := newAdminBillingRecordMutation(c.config, OpCreate)
+	return &AdminBillingRecordCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AdminBillingRecord entities.
+func (c *AdminBillingRecordClient) CreateBulk(builders ...*AdminBillingRecordCreate) *AdminBillingRecordCreateBulk {
+	return &AdminBillingRecordCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AdminBillingRecordClient) MapCreateBulk(slice any, setFunc func(*AdminBillingRecordCreate, int)) *AdminBillingRecordCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AdminBillingRecordCreateBulk{err: fmt.Errorf("calling to AdminBillingRecordClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AdminBillingRecordCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AdminBillingRecordCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AdminBillingRecord.
+func (c *AdminBillingRecordClient) Update() *AdminBillingRecordUpdate {
+	mutation := newAdminBillingRecordMutation(c.config, OpUpdate)
+	return &AdminBillingRecordUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AdminBillingRecordClient) UpdateOne(_m *AdminBillingRecord) *AdminBillingRecordUpdateOne {
+	mutation := newAdminBillingRecordMutation(c.config, OpUpdateOne, withAdminBillingRecord(_m))
+	return &AdminBillingRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AdminBillingRecordClient) UpdateOneID(id int64) *AdminBillingRecordUpdateOne {
+	mutation := newAdminBillingRecordMutation(c.config, OpUpdateOne, withAdminBillingRecordID(id))
+	return &AdminBillingRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AdminBillingRecord.
+func (c *AdminBillingRecordClient) Delete() *AdminBillingRecordDelete {
+	mutation := newAdminBillingRecordMutation(c.config, OpDelete)
+	return &AdminBillingRecordDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AdminBillingRecordClient) DeleteOne(_m *AdminBillingRecord) *AdminBillingRecordDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AdminBillingRecordClient) DeleteOneID(id int64) *AdminBillingRecordDeleteOne {
+	builder := c.Delete().Where(adminbillingrecord.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AdminBillingRecordDeleteOne{builder}
+}
+
+// Query returns a query builder for AdminBillingRecord.
+func (c *AdminBillingRecordClient) Query() *AdminBillingRecordQuery {
+	return &AdminBillingRecordQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAdminBillingRecord},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AdminBillingRecord entity by its id.
+func (c *AdminBillingRecordClient) Get(ctx context.Context, id int64) (*AdminBillingRecord, error) {
+	return c.Query().Where(adminbillingrecord.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AdminBillingRecordClient) GetX(ctx context.Context, id int64) *AdminBillingRecord {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AdminBillingRecordClient) Hooks() []Hook {
+	hooks := c.hooks.AdminBillingRecord
+	return append(hooks[:len(hooks):len(hooks)], adminbillingrecord.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *AdminBillingRecordClient) Interceptors() []Interceptor {
+	inters := c.inters.AdminBillingRecord
+	return append(inters[:len(inters):len(inters)], adminbillingrecord.Interceptors[:]...)
+}
+
+func (c *AdminBillingRecordClient) mutate(ctx context.Context, m *AdminBillingRecordMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AdminBillingRecordCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AdminBillingRecordUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AdminBillingRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AdminBillingRecordDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AdminBillingRecord mutation op: %q", m.Op())
 	}
 }
 
@@ -6209,26 +6352,26 @@ func (c *UserSubscriptionClient) mutate(ctx context.Context, m *UserSubscription
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
-		AuthIdentityChannel, ChannelMonitor, ChannelMonitorDailyRollup,
-		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
-		UserSubscription []ent.Hook
+		APIKey, Account, AccountGroup, AdminBillingRecord, Announcement,
+		AnnouncementRead, AuthIdentity, AuthIdentityChannel, ChannelMonitor,
+		ChannelMonitorDailyRollup, ChannelMonitorHistory,
+		ChannelMonitorRequestTemplate, ErrorPassthroughRule, Group, IdempotencyRecord,
+		IdentityAdoptionDecision, PaymentAuditLog, PaymentOrder,
+		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage, Proxy,
+		RedeemCode, SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserPlatformQuota, UserSubscription []ent.Hook
 	}
 	inters struct {
-		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
-		AuthIdentityChannel, ChannelMonitor, ChannelMonitorDailyRollup,
-		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
-		UserSubscription []ent.Interceptor
+		APIKey, Account, AccountGroup, AdminBillingRecord, Announcement,
+		AnnouncementRead, AuthIdentity, AuthIdentityChannel, ChannelMonitor,
+		ChannelMonitorDailyRollup, ChannelMonitorHistory,
+		ChannelMonitorRequestTemplate, ErrorPassthroughRule, Group, IdempotencyRecord,
+		IdentityAdoptionDecision, PaymentAuditLog, PaymentOrder,
+		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage, Proxy,
+		RedeemCode, SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserPlatformQuota, UserSubscription []ent.Interceptor
 	}
 )
 

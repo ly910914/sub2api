@@ -246,6 +246,48 @@ var (
 			},
 		},
 	}
+	// AdminBillingRecordsColumns holds the columns for the "admin_billing_records" table.
+	AdminBillingRecordsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "person_name", Type: field.TypeString, Size: 100},
+		{Name: "source", Type: field.TypeString, Size: 100, Default: ""},
+		{Name: "cost", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,2)"}},
+		{Name: "profit", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,2)"}},
+		{Name: "occurred_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "note", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "created_by", Type: field.TypeInt64},
+	}
+	// AdminBillingRecordsTable holds the schema information for the "admin_billing_records" table.
+	AdminBillingRecordsTable = &schema.Table{
+		Name:       "admin_billing_records",
+		Columns:    AdminBillingRecordsColumns,
+		PrimaryKey: []*schema.Column{AdminBillingRecordsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "adminbillingrecord_person_name",
+				Unique:  false,
+				Columns: []*schema.Column{AdminBillingRecordsColumns[4]},
+			},
+			{
+				Name:    "adminbillingrecord_source",
+				Unique:  false,
+				Columns: []*schema.Column{AdminBillingRecordsColumns[5]},
+			},
+			{
+				Name:    "adminbillingrecord_occurred_at",
+				Unique:  false,
+				Columns: []*schema.Column{AdminBillingRecordsColumns[8]},
+			},
+			{
+				Name:    "adminbillingrecord_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{AdminBillingRecordsColumns[1]},
+			},
+		},
+	}
 	// AnnouncementsColumns holds the columns for the "announcements" table.
 	AnnouncementsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1778,6 +1820,7 @@ var (
 		APIKeysTable,
 		AccountsTable,
 		AccountGroupsTable,
+		AdminBillingRecordsTable,
 		AnnouncementsTable,
 		AnnouncementReadsTable,
 		AuthIdentitiesTable,
@@ -1827,6 +1870,9 @@ func init() {
 	AccountGroupsTable.ForeignKeys[1].RefTable = GroupsTable
 	AccountGroupsTable.Annotation = &entsql.Annotation{
 		Table: "account_groups",
+	}
+	AdminBillingRecordsTable.Annotation = &entsql.Annotation{
+		Table: "admin_billing_records",
 	}
 	AnnouncementsTable.Annotation = &entsql.Annotation{
 		Table: "announcements",
