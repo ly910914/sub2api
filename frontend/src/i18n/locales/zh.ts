@@ -344,23 +344,6 @@ export default {
     }
   },
 
-  adminCompliance: {
-    title: '部署与运营合规确认',
-    blockingNotice: '继续使用控制台前，须完成部署与运营合规确认。',
-    riskNotice: '本确认用于以清晰、显著、可留痕的方式提示自部署实例的合规义务与运营风险。',
-    version: '协议版本',
-    openDocument: '在 GitHub 查看协议文件',
-    documentSource: '协议正文来自本项目仓库中的 Markdown 文件。修改协议内容时必须同步递增协议版本；已确认的旧版本将失效，控制台使用者须重新确认。',
-    inputLabel: '请逐字输入以下确认短语',
-    inputPlaceholder: '输入确认短语以继续',
-    inputMismatch: '确认短语不匹配，请逐字输入提示内容。',
-    legalNote: '本确认用于明确自部署实例与开源项目、著作权人、贡献者及维护者之间的非关联关系和责任边界；部署、运营或控制相关实例的主体应独立承担其适用义务。',
-    logout: '退出登录',
-    accept: '确认并继续',
-    accepted: '合规确认已记录',
-    acceptFailed: '提交确认失败'
-  },
-
   legal: {
     loadFailed: '文档加载失败',
     retryLater: '请稍后刷新页面重试。',
@@ -368,8 +351,7 @@ export default {
     notFoundDescription: '当前条款文档不存在或已被管理员移除。',
     updatedAt: '更新日期：{date}',
     empty: '暂无正文内容',
-    loginAgreement: '登录条款',
-    adminCompliance: '部署与运营合规承诺'
+    loginAgreement: '登录条款'
   },
 
   // Navigation
@@ -5755,6 +5737,12 @@ export default {
           configureLink: '前往 渠道管理 > 渠道定价 配置模型价格',
           enabled: '启用可用渠道',
           enabledHint: '关闭后用户端侧边栏入口隐藏，接口返回空数组。',
+        },
+        imageGeneration: {
+          title: '网页生图',
+          description: '向已登录用户展示网页端的生图页面（文生图与图片编辑）。默认关闭。',
+          enabled: '启用网页生图',
+          enabledHint: '关闭后用户端侧边栏入口隐藏，直接访问生图页会被重定向。API 密钥调用的生图接口不受影响。',
         },
         riskControl: {
           title: '风控中心',

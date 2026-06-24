@@ -145,6 +145,7 @@ type SystemSettings struct {
 	DefaultConcurrency           int
 	DefaultBalance               float64
 	RiskControlEnabled           bool
+	ImageGenerationEnabled       bool
 	CyberSessionBlockEnabled     bool
 	CyberSessionBlockTTLSeconds  int
 	AffiliateEnabled             bool
@@ -301,6 +302,9 @@ type PublicSettings struct {
 
 	// 风控中心功能开关
 	RiskControlEnabled bool `json:"risk_control_enabled"`
+
+	// 网页生图功能开关
+	ImageGenerationEnabled bool `json:"image_generation_enabled"`
 
 	// 允许终端用户在用量页查看自己的失败请求
 	AllowUserViewErrorRequests bool `json:"allow_user_view_error_requests"`

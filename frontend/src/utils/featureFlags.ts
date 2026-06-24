@@ -114,6 +114,11 @@ export const FeatureFlags = {
     mode: 'opt-in',
     label: 'Risk Control',
   }),
+  imageGeneration: defineFlag({
+    key: 'image_generation_enabled',
+    mode: 'opt-in',
+    label: 'Image Generation',
+  }),
   affiliate: defineFlag({
     key: 'affiliate_enabled',
     mode: 'opt-in',

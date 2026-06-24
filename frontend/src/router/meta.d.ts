@@ -56,6 +56,12 @@ declare module 'vue-router' {
     requiresRiskControl?: boolean
 
     /**
+     * 是否要求网页生图功能开关已启用
+     * @default false
+     */
+    requiresImageGeneration?: boolean
+
+    /**
      * i18n key for the page title
      */
     titleKey?: string

@@ -7,7 +7,6 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useAdminSettingsStore } from '@/stores/adminSettings'
-import { useAdminComplianceStore } from '@/stores/adminCompliance'
 import { useNavigationLoadingState } from '@/composables/useNavigationLoading'
 import { useRoutePrefetch } from '@/composables/useRoutePrefetch'
 import { getSetupStatus } from '@/api/setup'
@@ -214,7 +213,8 @@ const routes: RouteRecordRaw[] = [
       requiresAdmin: false,
       title: 'Image',
       titleKey: 'nav.imageGeneration',
-      descriptionKey: 'images.startDescription'
+      descriptionKey: 'images.startDescription',
+      requiresImageGeneration: true
     }
   },
   {
@@ -822,21 +822,6 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
 
-  if (requiresAdmin && authStore.isAdmin) {
-    const adminComplianceStore = useAdminComplianceStore()
-    if (!adminComplianceStore.initialized) {
-      try {
-        await adminComplianceStore.fetchStatus()
-      } catch (error) {
-        const err = error as { status?: number; code?: string; metadata?: Record<string, string> }
-        if (err.status === 423 && err.code === 'ADMIN_COMPLIANCE_ACK_REQUIRED') {
-          adminComplianceStore.requireAcknowledgement(err.metadata)
-        }
-      }
-    }
-  }
-
-
   // Check payment requirement (internal payment system only)
   if (to.meta.requiresPayment) {
     const paymentEnabled = appStore.cachedPublicSettings?.payment_enabled
@@ -850,6 +835,14 @@ router.beforeEach(async (to, _from, next) => {
     const riskControlEnabled = appStore.cachedPublicSettings?.risk_control_enabled === true
     if (!riskControlEnabled) {
       next(authStore.isAdmin ? '/admin/settings' : '/dashboard')
+      return
+    }
+  }
+
+  if (to.meta.requiresImageGeneration) {
+    const imageGenerationEnabled = appStore.cachedPublicSettings?.image_generation_enabled === true
+    if (!imageGenerationEnabled) {
+      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
       return
     }
   }

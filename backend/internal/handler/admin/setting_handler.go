@@ -228,6 +228,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		DefaultConcurrency:                     settings.DefaultConcurrency,
 		DefaultBalance:                         settings.DefaultBalance,
 		RiskControlEnabled:                     settings.RiskControlEnabled,
+		ImageGenerationEnabled:                 settings.ImageGenerationEnabled,
 		CyberSessionBlockEnabled:               settings.CyberSessionBlockEnabled,
 		CyberSessionBlockTTLSeconds:            settings.CyberSessionBlockTTLSeconds,
 		AffiliateRebateRate:                    settings.AffiliateRebateRate,
@@ -653,6 +654,9 @@ type UpdateSettingsRequest struct {
 
 	// 风控中心功能开关
 	RiskControlEnabled *bool `json:"risk_control_enabled"`
+
+	// 网页生图功能开关
+	ImageGenerationEnabled *bool `json:"image_generation_enabled"`
 
 	// cyber 会话屏蔽开关 + TTL
 	CyberSessionBlockEnabled    *bool `json:"cyber_session_block_enabled"`
@@ -1805,6 +1809,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.RiskControlEnabled
 		}(),
+		ImageGenerationEnabled: func() bool {
+			if req.ImageGenerationEnabled != nil {
+				return *req.ImageGenerationEnabled
+			}
+			return previousSettings.ImageGenerationEnabled
+		}(),
 		CyberSessionBlockEnabled: func() bool {
 			if req.CyberSessionBlockEnabled != nil {
 				return *req.CyberSessionBlockEnabled
@@ -2142,6 +2152,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		AffiliateEnabled: updatedSettings.AffiliateEnabled,
 
 		RiskControlEnabled:          updatedSettings.RiskControlEnabled,
+		ImageGenerationEnabled:      updatedSettings.ImageGenerationEnabled,
 		CyberSessionBlockEnabled:    updatedSettings.CyberSessionBlockEnabled,
 		CyberSessionBlockTTLSeconds: updatedSettings.CyberSessionBlockTTLSeconds,
 		AllowUserViewErrorRequests:  updatedSettings.AllowUserViewErrorRequests,
@@ -2633,6 +2644,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.RiskControlEnabled != after.RiskControlEnabled {
 		changed = append(changed, "risk_control_enabled")
+	}
+	if before.ImageGenerationEnabled != after.ImageGenerationEnabled {
+		changed = append(changed, "image_generation_enabled")
 	}
 	if before.CyberSessionBlockEnabled != after.CyberSessionBlockEnabled {
 		changed = append(changed, "cyber_session_block_enabled")

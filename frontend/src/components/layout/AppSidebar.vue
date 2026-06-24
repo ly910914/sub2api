@@ -18,7 +18,6 @@
         </span>
         <!-- Version Badge -->
         <VersionBadge :version="siteVersion" />
-        <span class="sidebar-update-test-badge">更新测试 v0.1.136</span>
       </div>
     </div>
 
@@ -667,6 +666,7 @@ const flagPayment = makeSidebarFlag(FeatureFlags.payment)
 const flagAvailableChannels = makeSidebarFlag(FeatureFlags.availableChannels)
 const flagAffiliate = makeSidebarFlag(FeatureFlags.affiliate)
 const flagRiskControl = makeSidebarFlag(FeatureFlags.riskControl)
+const flagImageGeneration = makeSidebarFlag(FeatureFlags.imageGeneration)
 const flagOpsMonitoring = () => adminSettingsStore.opsMonitoringEnabled
 const flagAdminPayment = () => adminSettingsStore.paymentEnabled
 
@@ -682,7 +682,7 @@ function buildSelfNavItems(withDashboard: boolean): NavItem[] {
   }
   items.push(
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
-    { path: '/image', label: t('nav.imageGeneration'), icon: ImageIcon },
+    { path: '/image', label: t('nav.imageGeneration'), icon: ImageIcon, featureFlag: flagImageGeneration },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
     { path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels },
     { path: '/monitor', label: t('nav.channelStatus'), icon: SignalIcon, featureFlag: flagChannelMonitor },
@@ -946,27 +946,6 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.sidebar-update-test-badge {
-  display: inline-flex;
-  margin-top: 0.25rem;
-  max-width: 100%;
-  align-items: center;
-  border-radius: 0.375rem;
-  border: 1px solid rgb(34 197 94 / 0.35);
-  background: rgb(240 253 244);
-  padding: 0.125rem 0.375rem;
-  color: rgb(21 128 61);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  line-height: 1rem;
-}
-
-.dark .sidebar-update-test-badge {
-  border-color: rgb(74 222 128 / 0.28);
-  background: rgb(20 83 45 / 0.28);
-  color: rgb(134 239 172);
 }
 
 .sidebar-link-collapsed {
