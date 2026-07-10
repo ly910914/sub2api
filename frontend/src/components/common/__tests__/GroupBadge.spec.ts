@@ -11,6 +11,12 @@ vi.mock('vue-i18n', () => ({
   })
 }))
 
+vi.mock('@/stores/app', () => ({
+  useAppStore: () => ({
+    cachedPublicSettings: {}
+  })
+}))
+
 describe('GroupBadge', () => {
   it('does not show platform icons for non-OpenAI groups', () => {
     const wrapper = mount(GroupBadge, {
