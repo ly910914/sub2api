@@ -34,6 +34,7 @@ import {
 } from 'chart.js'
 import { Line } from 'vue-chartjs'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import { formatCurrency } from '@/utils/format'
 import type { AdminBillingTrendPoint } from '@/types'
 
 ChartJS.register(
@@ -48,6 +49,7 @@ ChartJS.register(
 )
 
 const { t } = useI18n()
+const ADMIN_BILLING_CURRENCY = 'CNY'
 
 const props = defineProps<{
   trendData: AdminBillingTrendPoint[]
@@ -112,7 +114,7 @@ const lineOptions = computed(() => ({
     tooltip: {
       callbacks: {
         label: (context: any) =>
-          `${context.dataset.label}: ${formatCny(context.raw as number)}`
+          `${context.dataset.label}: ${formatBillingCurrency(context.raw as number)}`
       }
     }
   },
@@ -137,17 +139,13 @@ const lineOptions = computed(() => ({
         font: {
           size: 10
         },
-        callback: (value: string | number) => formatCny(Number(value))
+        callback: (value: string | number) => formatBillingCurrency(Number(value))
       }
     }
   }
 }))
 
-const formatCny = (value: number): string => {
-  if (!Number.isFinite(value)) return '¥0.00'
-  return `¥${value.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })}`
+const formatBillingCurrency = (value: number): string => {
+  return formatCurrency(Number.isFinite(value) ? value : 0, ADMIN_BILLING_CURRENCY)
 }
 </script>

@@ -17,6 +17,8 @@ vi.mock('@/stores/app', () => ({
   })
 }))
 
+const platformColorPattern = /\b(?:bg|text|border)-(?:orange|emerald|green|blue|sky|purple|fuchsia|violet|zinc|amber)-/
+
 describe('GroupBadge', () => {
   it('does not show platform icons for non-OpenAI groups', () => {
     const wrapper = mount(GroupBadge, {
@@ -58,6 +60,22 @@ describe('GroupBadge', () => {
     expect(icons).toHaveLength(0)
     expect(wrapper.text()).toContain('OpenAI Group')
   })
+
+  it('keeps group badges neutral-colored across platforms', () => {
+    const platforms = ['anthropic', 'openai', 'gemini', 'antigravity', 'grok'] as const
+
+    for (const platform of platforms) {
+      const wrapper = mount(GroupBadge, {
+        props: {
+          name: `${platform} Group`,
+          platform,
+          rateMultiplier: 1
+        }
+      })
+
+      expect(wrapper.html()).not.toMatch(platformColorPattern)
+    }
+  })
 })
 
 describe('GroupOptionItem', () => {
@@ -73,5 +91,17 @@ describe('GroupOptionItem', () => {
     const icons = wrapper.findAllComponents(PlatformIcon)
 
     expect(icons).toHaveLength(0)
+  })
+
+  it('keeps group option rate pills neutral-colored', () => {
+    const wrapper = mount(GroupOptionItem, {
+      props: {
+        name: 'OpenAI Group',
+        platform: 'openai',
+        rateMultiplier: 1
+      }
+    })
+
+    expect(wrapper.html()).not.toMatch(platformColorPattern)
   })
 })

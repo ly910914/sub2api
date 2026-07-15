@@ -10,7 +10,7 @@
           <div class="min-w-0">
             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ card.label }}</p>
             <p class="mt-2 truncate text-2xl font-semibold text-gray-900 dark:text-white">
-              {{ formatCny(card.value) }}
+              {{ formatBillingCurrency(card.value) }}
             </p>
           </div>
           <div
@@ -97,18 +97,18 @@
             </template>
 
             <template #cell-cost="{ value }">
-              <span class="font-medium text-red-600 dark:text-red-400">{{ formatCny(value) }}</span>
+              <span class="font-medium text-red-600 dark:text-red-400">{{ formatBillingCurrency(value) }}</span>
             </template>
 
             <template #cell-profit="{ value }">
               <span class="font-medium text-emerald-600 dark:text-emerald-400">
-                {{ formatCny(value) }}
+                {{ formatBillingCurrency(value) }}
               </span>
             </template>
 
             <template #cell-revenue="{ row }">
               <span class="font-medium text-gray-900 dark:text-white">
-                {{ formatCny(row.cost + row.profit) }}
+                {{ formatBillingCurrency(row.cost + row.profit) }}
               </span>
             </template>
 
@@ -202,13 +202,13 @@
                     {{ person.person_name }}
                   </td>
                   <td class="px-3 py-3 text-right text-red-600 dark:text-red-400">
-                    {{ formatCny(person.total_cost) }}
+                    {{ formatBillingCurrency(person.total_cost) }}
                   </td>
                   <td class="px-3 py-3 text-right text-emerald-600 dark:text-emerald-400">
-                    {{ formatCny(person.total_profit) }}
+                    {{ formatBillingCurrency(person.total_profit) }}
                   </td>
                   <td class="px-3 py-3 text-right text-gray-900 dark:text-white">
-                    {{ formatCny(person.total_revenue) }}
+                    {{ formatBillingCurrency(person.total_revenue) }}
                   </td>
                   <td class="px-3 py-3 text-right text-gray-500 dark:text-gray-400">
                     {{ person.count }}
@@ -308,7 +308,7 @@ import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api/admin'
 import { useAppStore } from '@/stores/app'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
-import { formatDateTime, parseDateTimeLocalInput } from '@/utils/format'
+import { formatCurrency, formatDateTime, parseDateTimeLocalInput } from '@/utils/format'
 import type {
   AdminBillingRecord,
   AdminBillingStats,
@@ -326,6 +326,7 @@ import Icon from '@/components/icons/Icon.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const ADMIN_BILLING_CURRENCY = 'CNY'
 
 const records = ref<AdminBillingRecord[]>([])
 const stats = ref<AdminBillingStats>(emptyStats())
@@ -698,12 +699,9 @@ const buildRequest = (form: typeof createForm): CreateAdminBillingRecordRequest 
   note: form.note.trim() || null
 })
 
-const formatCny = (amount: number | null | undefined): string => {
+const formatBillingCurrency = (amount: number | null | undefined): string => {
   const value = Number(amount || 0)
-  return `¥${value.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })}`
+  return formatCurrency(value, ADMIN_BILLING_CURRENCY)
 }
 
 const toDateTimeLocal = (value: string | Date | null | undefined): string => {
