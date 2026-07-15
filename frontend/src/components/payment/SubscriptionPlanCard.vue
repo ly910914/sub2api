@@ -28,10 +28,11 @@
           <div class="flex items-baseline gap-1">
             <span class="text-xs text-gray-400 dark:text-dark-500">$</span>
             <span class="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{ plan.price }}</span>
+            <span v-if="plan.currency" class="text-xs font-medium text-gray-400 dark:text-dark-500">{{ plan.currency }}</span>
           </div>
           <span class="text-[11px] text-gray-400 dark:text-dark-500">/ {{ validitySuffix }}</span>
           <div v-if="plan.original_price" class="mt-0.5 flex items-center justify-end gap-1.5">
-            <span class="text-xs text-gray-400 line-through dark:text-dark-500">${{ plan.original_price }}</span>
+            <span class="text-xs text-gray-400 line-through dark:text-dark-500">${{ plan.original_price }}<template v-if="plan.currency"> {{ plan.currency }}</template></span>
             <span class="rounded bg-gray-100 px-1 py-0.5 text-[10px] font-semibold text-gray-600 dark:bg-dark-700 dark:text-gray-300">{{ discountText }}</span>
           </div>
         </div>
