@@ -105,11 +105,16 @@ func TestWriteConfigFileKeepsDefaultUserConcurrency(t *testing.T) {
 	}
 }
 
-func TestWriteConfigFileIncludesUpdateProxyURL(t *testing.T) {
+func TestWriteConfigFileIncludesUpdateProxyURLAndRedisUsername(t *testing.T) {
 	t.Setenv("DATA_DIR", t.TempDir())
 
 	if err := writeConfigFile(&SetupConfig{
 		Update: UpdateConfig{ProxyURL: "http://host.docker.internal:10809"},
+		Redis: RedisConfig{
+			Host:     "redis",
+			Port:     6379,
+			Username: "app-user",
+		},
 	}); err != nil {
 		t.Fatalf("writeConfigFile() error = %v", err)
 	}
@@ -122,6 +127,9 @@ func TestWriteConfigFileIncludesUpdateProxyURL(t *testing.T) {
 	content := string(data)
 	if !strings.Contains(content, "update:") || !strings.Contains(content, "proxy_url: http://host.docker.internal:10809") {
 		t.Fatalf("config missing update proxy URL, got:\n%s", content)
+	}
+	if !strings.Contains(content, "username: app-user") {
+		t.Fatalf("config missing Redis username, got:\n%s", content)
 	}
 }
 
