@@ -268,6 +268,8 @@ type SystemSettings struct {
 
 	// Force Alipay mobile clients to use QR code payment instead of mobile redirect
 	PaymentAlipayForceQRCode bool `json:"payment_alipay_force_qrcode"`
+	// Use Alipay face-to-face precreate and an app deep link on mobile clients.
+	PaymentAlipayMobilePrecreateDeepLink bool `json:"payment_alipay_mobile_precreate_deep_link"`
 
 	// 余额、订阅到期与账号限额通知
 	BalanceLowNotifyEnabled         bool               `json:"balance_low_notify_enabled"`
@@ -286,9 +288,6 @@ type SystemSettings struct {
 
 	// 风控中心功能开关
 	RiskControlEnabled bool `json:"risk_control_enabled"`
-
-	// 网页生图功能开关
-	ImageGenerationEnabled bool `json:"image_generation_enabled"`
 
 	// cyber 会话屏蔽开关 + TTL
 	CyberSessionBlockEnabled    bool `json:"cyber_session_block_enabled"`
@@ -373,8 +372,6 @@ type PublicSettings struct {
 	AffiliateEnabled bool `json:"affiliate_enabled"`
 
 	RiskControlEnabled bool `json:"risk_control_enabled"`
-
-	ImageGenerationEnabled bool `json:"image_generation_enabled"`
 
 	AllowUserViewErrorRequests bool `json:"allow_user_view_error_requests"`
 }

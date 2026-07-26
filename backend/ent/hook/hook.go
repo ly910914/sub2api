@@ -45,18 +45,6 @@ func (f AccountGroupFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AccountGroupMutation", m)
 }
 
-// The AdminBillingRecordFunc type is an adapter to allow the use of ordinary
-// function as AdminBillingRecord mutator.
-type AdminBillingRecordFunc func(context.Context, *ent.AdminBillingRecordMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f AdminBillingRecordFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.AdminBillingRecordMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdminBillingRecordMutation", m)
-}
-
 // The AnnouncementFunc type is an adapter to allow the use of ordinary
 // function as Announcement mutator.
 type AnnouncementFunc func(context.Context, *ent.AnnouncementMutation) (ent.Value, error)
@@ -187,6 +175,18 @@ func (f ChannelMonitorRequestTemplateFunc) Mutate(ctx context.Context, m ent.Mut
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ChannelMonitorRequestTemplateMutation", m)
+}
+
+// The CompositeModelRouteFunc type is an adapter to allow the use of ordinary
+// function as CompositeModelRoute mutator.
+type CompositeModelRouteFunc func(context.Context, *ent.CompositeModelRouteMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CompositeModelRouteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CompositeModelRouteMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CompositeModelRouteMutation", m)
 }
 
 // The ErrorPassthroughRuleFunc type is an adapter to allow the use of ordinary

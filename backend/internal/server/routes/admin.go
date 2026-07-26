@@ -22,7 +22,11 @@ func RegisterAdminRoutes(
 	admin.Use(gin.HandlerFunc(adminAuth))
 	// 审计中间件挂在认证之后：所有管理面变更类操作 + 敏感读取入审计日志
 	admin.Use(gin.HandlerFunc(auditLog))
+	admin.Use(middleware.AdminComplianceGuard(settingService))
 	{
+		// 部署与运营合规确认
+		registerAdminComplianceRoutes(admin, h)
+
 		// 仪表盘
 		registerDashboardRoutes(admin, h)
 
@@ -58,9 +62,6 @@ func RegisterAdminRoutes(
 
 		// 优惠码管理
 		registerPromoCodeRoutes(admin, h)
-
-		// 管理员手工账单
-		registerAdminBillingRoutes(admin, h)
 
 		// 系统设置
 		registerSettingsRoutes(admin, h)
@@ -141,6 +142,14 @@ func registerAuditLogRoutes(admin *gin.RouterGroup, h *handler.Handlers, _ middl
 		auditLogs.GET("/:id", h.Admin.AuditLog.Get)
 		// 清空需现场 TOTP 校验（在 handler 内强制），不复用 step-up sudo 窗口
 		auditLogs.POST("/clear", h.Admin.AuditLog.Clear)
+	}
+}
+
+func registerAdminComplianceRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	compliance := admin.Group("/compliance")
+	{
+		compliance.GET("", h.Admin.Compliance.GetStatus)
+		compliance.POST("/accept", h.Admin.Compliance.Accept)
 	}
 }
 
@@ -308,8 +317,14 @@ func registerGroupRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		groups.GET("/all", h.Admin.Group.GetAll)
 		groups.GET("/usage-summary", h.Admin.Group.GetUsageSummary)
 		groups.GET("/capacity-summary", h.Admin.Group.GetCapacitySummary)
+		groups.GET("/live-capability", h.Admin.Group.GetLiveCapability)
 		groups.PUT("/sort-order", h.Admin.Group.UpdateSortOrder)
 		groups.GET("/:id/models-list-candidates", h.Admin.Group.GetModelsListCandidates)
+		groups.GET("/:id/composite-routes", h.Admin.Group.ListCompositeRoutes)
+		groups.POST("/:id/composite-routes", h.Admin.Group.CreateCompositeRoute)
+		groups.POST("/:id/composite-routes/preview", h.Admin.Group.PreviewCompositeRoute)
+		groups.PUT("/:id/composite-routes/:route_id", h.Admin.Group.UpdateCompositeRoute)
+		groups.DELETE("/:id/composite-routes/:route_id", h.Admin.Group.DeleteCompositeRoute)
 		groups.GET("/:id", h.Admin.Group.GetByID)
 		groups.POST("", h.Admin.Group.Create)
 		groups.POST("/:id/duplicate", h.Admin.Group.Duplicate)
@@ -332,6 +347,8 @@ func registerAccountRoutes(admin *gin.RouterGroup, h *handler.Handlers, stepUpAu
 		accounts.GET("/upstream-billing-probe/settings", h.Admin.Account.GetUpstreamBillingProbeSettings)
 		accounts.PUT("/upstream-billing-probe/settings", h.Admin.Account.UpdateUpstreamBillingProbeSettings)
 		accounts.POST("/upstream-billing-probe/batch", h.Admin.Account.ProbeUpstreamBillingBatch)
+		accounts.GET("/ollama-cloud-usage/settings", h.Admin.Account.GetOllamaCloudUsageSettings)
+		accounts.PUT("/ollama-cloud-usage/settings", h.Admin.Account.UpdateOllamaCloudUsageSettings)
 		accounts.GET("/:id", h.Admin.Account.GetByID)
 		accounts.POST("", h.Admin.Account.Create)
 		accounts.POST("/:id/duplicate", h.Admin.Account.Duplicate)
@@ -342,6 +359,11 @@ func registerAccountRoutes(admin *gin.RouterGroup, h *handler.Handlers, stepUpAu
 		accounts.PUT("/:id", h.Admin.Account.Update)
 		accounts.PUT("/:id/upstream-billing-probe", h.Admin.Account.SetUpstreamBillingProbeEnabled)
 		accounts.POST("/:id/upstream-billing-probe", h.Admin.Account.ProbeUpstreamBilling)
+		accounts.GET("/:id/ollama-cloud-usage", h.Admin.Account.GetOllamaCloudUsage)
+		accounts.PUT("/:id/ollama-cloud-usage/session", h.Admin.Account.SaveOllamaCloudUsageSession)
+		accounts.DELETE("/:id/ollama-cloud-usage/session", h.Admin.Account.DeleteOllamaCloudUsageSession)
+		accounts.PUT("/:id/ollama-cloud-usage/auto-refresh", h.Admin.Account.SetOllamaCloudUsageAutoRefresh)
+		accounts.POST("/:id/ollama-cloud-usage/refresh", h.Admin.Account.RefreshOllamaCloudUsage)
 		accounts.DELETE("/:id", h.Admin.Account.Delete)
 		accounts.POST("/:id/test", h.Admin.Account.Test)
 		accounts.POST("/:id/recover-state", h.Admin.Account.RecoverState)
@@ -495,19 +517,6 @@ func registerPromoCodeRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		promoCodes.PUT("/:id", h.Admin.Promo.Update)
 		promoCodes.DELETE("/:id", h.Admin.Promo.Delete)
 		promoCodes.GET("/:id/usages", h.Admin.Promo.GetUsages)
-	}
-}
-
-func registerAdminBillingRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
-	billing := admin.Group("/billing-records")
-	{
-		billing.GET("", h.Admin.Billing.List)
-		billing.POST("", h.Admin.Billing.Create)
-		billing.GET("/stats", h.Admin.Billing.Stats)
-		billing.GET("/suggestions", h.Admin.Billing.Suggestions)
-		billing.GET("/source-suggestions", h.Admin.Billing.SourceSuggestions)
-		billing.PUT("/:id", h.Admin.Billing.Update)
-		billing.DELETE("/:id", h.Admin.Billing.Delete)
 	}
 }
 

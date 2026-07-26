@@ -15,9 +15,6 @@ type Account func(*sql.Selector)
 // AccountGroup is the predicate function for accountgroup builders.
 type AccountGroup func(*sql.Selector)
 
-// AdminBillingRecord is the predicate function for adminbillingrecord builders.
-type AdminBillingRecord func(*sql.Selector)
-
 // Announcement is the predicate function for announcement builders.
 type Announcement func(*sql.Selector)
 
@@ -50,6 +47,9 @@ type ChannelMonitorHistory func(*sql.Selector)
 
 // ChannelMonitorRequestTemplate is the predicate function for channelmonitorrequesttemplate builders.
 type ChannelMonitorRequestTemplate func(*sql.Selector)
+
+// CompositeModelRoute is the predicate function for compositemodelroute builders.
+type CompositeModelRoute func(*sql.Selector)
 
 // ErrorPassthroughRule is the predicate function for errorpassthroughrule builders.
 type ErrorPassthroughRule func(*sql.Selector)

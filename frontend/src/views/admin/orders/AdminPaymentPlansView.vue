@@ -11,8 +11,8 @@
 
       <!-- Plans Table -->
       <DataTable :columns="planColumns" :data="plans" :loading="plansLoading">
-        <template #cell-name="{ value }">
-          <span class="text-sm font-medium text-gray-900 dark:text-white">{{ value }}</span>
+        <template #cell-name="{ value, row }">
+          <span class="text-sm font-medium" :class="getPlanNameClass(row.group_id)">{{ value }}</span>
         </template>
         <template #cell-group_id="{ value }">
           <span v-if="isGroupMissing(value)" class="text-sm">
@@ -92,6 +92,7 @@ import Icon from '@/components/icons/Icon.vue'
 import GroupBadge from '@/components/common/GroupBadge.vue'
 import PlanEditDialog from './PlanEditDialog.vue'
 import { currencySymbol } from '@/components/payment/currency'
+import { platformTextClass } from '@/utils/platformColors'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -125,6 +126,12 @@ function getGroup(id: number): AdminGroup | undefined {
 function isGroupMissing(id: number): boolean {
   return id > 0 && !groups.value.find(g => g.id === id)
 }
+
+function getPlanNameClass(groupId: number): string {
+  const group = getGroup(groupId)
+  return group ? platformTextClass(group.platform) : 'text-gray-900 dark:text-white'
+}
+
 
 // ==================== Plans ====================
 

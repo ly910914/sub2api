@@ -14,7 +14,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/accountgroup"
-	"github.com/Wei-Shaw/sub2api/ent/adminbillingrecord"
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
@@ -27,6 +26,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
 	"github.com/Wei-Shaw/sub2api/ent/channelmonitorrequesttemplate"
+	"github.com/Wei-Shaw/sub2api/ent/compositemodelroute"
 	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/idempotencyrecord"
@@ -67,7 +67,6 @@ const (
 	TypeAPIKey                        = "APIKey"
 	TypeAccount                       = "Account"
 	TypeAccountGroup                  = "AccountGroup"
-	TypeAdminBillingRecord            = "AdminBillingRecord"
 	TypeAnnouncement                  = "Announcement"
 	TypeAnnouncementRead              = "AnnouncementRead"
 	TypeAuthIdentity                  = "AuthIdentity"
@@ -79,6 +78,7 @@ const (
 	TypeChannelMonitorDailyRollup     = "ChannelMonitorDailyRollup"
 	TypeChannelMonitorHistory         = "ChannelMonitorHistory"
 	TypeChannelMonitorRequestTemplate = "ChannelMonitorRequestTemplate"
+	TypeCompositeModelRoute           = "CompositeModelRoute"
 	TypeErrorPassthroughRule          = "ErrorPassthroughRule"
 	TypeGroup                         = "Group"
 	TypeIdempotencyRecord             = "IdempotencyRecord"
@@ -5568,961 +5568,6 @@ func (m *AccountGroupMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown AccountGroup edge %s", name)
-}
-
-// AdminBillingRecordMutation represents an operation that mutates the AdminBillingRecord nodes in the graph.
-type AdminBillingRecordMutation struct {
-	config
-	op            Op
-	typ           string
-	id            *int64
-	created_at    *time.Time
-	updated_at    *time.Time
-	deleted_at    *time.Time
-	person_name   *string
-	source        *string
-	cost          *float64
-	addcost       *float64
-	profit        *float64
-	addprofit     *float64
-	occurred_at   *time.Time
-	note          *string
-	created_by    *int64
-	addcreated_by *int64
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*AdminBillingRecord, error)
-	predicates    []predicate.AdminBillingRecord
-}
-
-var _ ent.Mutation = (*AdminBillingRecordMutation)(nil)
-
-// adminbillingrecordOption allows management of the mutation configuration using functional options.
-type adminbillingrecordOption func(*AdminBillingRecordMutation)
-
-// newAdminBillingRecordMutation creates new mutation for the AdminBillingRecord entity.
-func newAdminBillingRecordMutation(c config, op Op, opts ...adminbillingrecordOption) *AdminBillingRecordMutation {
-	m := &AdminBillingRecordMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeAdminBillingRecord,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withAdminBillingRecordID sets the ID field of the mutation.
-func withAdminBillingRecordID(id int64) adminbillingrecordOption {
-	return func(m *AdminBillingRecordMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *AdminBillingRecord
-		)
-		m.oldValue = func(ctx context.Context) (*AdminBillingRecord, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().AdminBillingRecord.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withAdminBillingRecord sets the old AdminBillingRecord of the mutation.
-func withAdminBillingRecord(node *AdminBillingRecord) adminbillingrecordOption {
-	return func(m *AdminBillingRecordMutation) {
-		m.oldValue = func(context.Context) (*AdminBillingRecord, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m AdminBillingRecordMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m AdminBillingRecordMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *AdminBillingRecordMutation) ID() (id int64, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *AdminBillingRecordMutation) IDs(ctx context.Context) ([]int64, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []int64{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().AdminBillingRecord.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (m *AdminBillingRecordMutation) SetCreatedAt(t time.Time) {
-	m.created_at = &t
-}
-
-// CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *AdminBillingRecordMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.created_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "created_at" field's value of the AdminBillingRecord entity.
-// If the AdminBillingRecord object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminBillingRecordMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "created_at" field.
-func (m *AdminBillingRecordMutation) ResetCreatedAt() {
-	m.created_at = nil
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (m *AdminBillingRecordMutation) SetUpdatedAt(t time.Time) {
-	m.updated_at = &t
-}
-
-// UpdatedAt returns the value of the "updated_at" field in the mutation.
-func (m *AdminBillingRecordMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updated_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUpdatedAt returns the old "updated_at" field's value of the AdminBillingRecord entity.
-// If the AdminBillingRecord object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminBillingRecordMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
-	}
-	return oldValue.UpdatedAt, nil
-}
-
-// ResetUpdatedAt resets all changes to the "updated_at" field.
-func (m *AdminBillingRecordMutation) ResetUpdatedAt() {
-	m.updated_at = nil
-}
-
-// SetDeletedAt sets the "deleted_at" field.
-func (m *AdminBillingRecordMutation) SetDeletedAt(t time.Time) {
-	m.deleted_at = &t
-}
-
-// DeletedAt returns the value of the "deleted_at" field in the mutation.
-func (m *AdminBillingRecordMutation) DeletedAt() (r time.Time, exists bool) {
-	v := m.deleted_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDeletedAt returns the old "deleted_at" field's value of the AdminBillingRecord entity.
-// If the AdminBillingRecord object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminBillingRecordMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
-	}
-	return oldValue.DeletedAt, nil
-}
-
-// ClearDeletedAt clears the value of the "deleted_at" field.
-func (m *AdminBillingRecordMutation) ClearDeletedAt() {
-	m.deleted_at = nil
-	m.clearedFields[adminbillingrecord.FieldDeletedAt] = struct{}{}
-}
-
-// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
-func (m *AdminBillingRecordMutation) DeletedAtCleared() bool {
-	_, ok := m.clearedFields[adminbillingrecord.FieldDeletedAt]
-	return ok
-}
-
-// ResetDeletedAt resets all changes to the "deleted_at" field.
-func (m *AdminBillingRecordMutation) ResetDeletedAt() {
-	m.deleted_at = nil
-	delete(m.clearedFields, adminbillingrecord.FieldDeletedAt)
-}
-
-// SetPersonName sets the "person_name" field.
-func (m *AdminBillingRecordMutation) SetPersonName(s string) {
-	m.person_name = &s
-}
-
-// PersonName returns the value of the "person_name" field in the mutation.
-func (m *AdminBillingRecordMutation) PersonName() (r string, exists bool) {
-	v := m.person_name
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPersonName returns the old "person_name" field's value of the AdminBillingRecord entity.
-// If the AdminBillingRecord object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminBillingRecordMutation) OldPersonName(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPersonName is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPersonName requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPersonName: %w", err)
-	}
-	return oldValue.PersonName, nil
-}
-
-// ResetPersonName resets all changes to the "person_name" field.
-func (m *AdminBillingRecordMutation) ResetPersonName() {
-	m.person_name = nil
-}
-
-// SetSource sets the "source" field.
-func (m *AdminBillingRecordMutation) SetSource(s string) {
-	m.source = &s
-}
-
-// Source returns the value of the "source" field in the mutation.
-func (m *AdminBillingRecordMutation) Source() (r string, exists bool) {
-	v := m.source
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSource returns the old "source" field's value of the AdminBillingRecord entity.
-// If the AdminBillingRecord object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminBillingRecordMutation) OldSource(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSource is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSource requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSource: %w", err)
-	}
-	return oldValue.Source, nil
-}
-
-// ResetSource resets all changes to the "source" field.
-func (m *AdminBillingRecordMutation) ResetSource() {
-	m.source = nil
-}
-
-// SetCost sets the "cost" field.
-func (m *AdminBillingRecordMutation) SetCost(f float64) {
-	m.cost = &f
-	m.addcost = nil
-}
-
-// Cost returns the value of the "cost" field in the mutation.
-func (m *AdminBillingRecordMutation) Cost() (r float64, exists bool) {
-	v := m.cost
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCost returns the old "cost" field's value of the AdminBillingRecord entity.
-// If the AdminBillingRecord object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminBillingRecordMutation) OldCost(ctx context.Context) (v float64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCost is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCost requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCost: %w", err)
-	}
-	return oldValue.Cost, nil
-}
-
-// AddCost adds f to the "cost" field.
-func (m *AdminBillingRecordMutation) AddCost(f float64) {
-	if m.addcost != nil {
-		*m.addcost += f
-	} else {
-		m.addcost = &f
-	}
-}
-
-// AddedCost returns the value that was added to the "cost" field in this mutation.
-func (m *AdminBillingRecordMutation) AddedCost() (r float64, exists bool) {
-	v := m.addcost
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetCost resets all changes to the "cost" field.
-func (m *AdminBillingRecordMutation) ResetCost() {
-	m.cost = nil
-	m.addcost = nil
-}
-
-// SetProfit sets the "profit" field.
-func (m *AdminBillingRecordMutation) SetProfit(f float64) {
-	m.profit = &f
-	m.addprofit = nil
-}
-
-// Profit returns the value of the "profit" field in the mutation.
-func (m *AdminBillingRecordMutation) Profit() (r float64, exists bool) {
-	v := m.profit
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldProfit returns the old "profit" field's value of the AdminBillingRecord entity.
-// If the AdminBillingRecord object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminBillingRecordMutation) OldProfit(ctx context.Context) (v float64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProfit is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProfit requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProfit: %w", err)
-	}
-	return oldValue.Profit, nil
-}
-
-// AddProfit adds f to the "profit" field.
-func (m *AdminBillingRecordMutation) AddProfit(f float64) {
-	if m.addprofit != nil {
-		*m.addprofit += f
-	} else {
-		m.addprofit = &f
-	}
-}
-
-// AddedProfit returns the value that was added to the "profit" field in this mutation.
-func (m *AdminBillingRecordMutation) AddedProfit() (r float64, exists bool) {
-	v := m.addprofit
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetProfit resets all changes to the "profit" field.
-func (m *AdminBillingRecordMutation) ResetProfit() {
-	m.profit = nil
-	m.addprofit = nil
-}
-
-// SetOccurredAt sets the "occurred_at" field.
-func (m *AdminBillingRecordMutation) SetOccurredAt(t time.Time) {
-	m.occurred_at = &t
-}
-
-// OccurredAt returns the value of the "occurred_at" field in the mutation.
-func (m *AdminBillingRecordMutation) OccurredAt() (r time.Time, exists bool) {
-	v := m.occurred_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldOccurredAt returns the old "occurred_at" field's value of the AdminBillingRecord entity.
-// If the AdminBillingRecord object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminBillingRecordMutation) OldOccurredAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldOccurredAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldOccurredAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldOccurredAt: %w", err)
-	}
-	return oldValue.OccurredAt, nil
-}
-
-// ResetOccurredAt resets all changes to the "occurred_at" field.
-func (m *AdminBillingRecordMutation) ResetOccurredAt() {
-	m.occurred_at = nil
-}
-
-// SetNote sets the "note" field.
-func (m *AdminBillingRecordMutation) SetNote(s string) {
-	m.note = &s
-}
-
-// Note returns the value of the "note" field in the mutation.
-func (m *AdminBillingRecordMutation) Note() (r string, exists bool) {
-	v := m.note
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldNote returns the old "note" field's value of the AdminBillingRecord entity.
-// If the AdminBillingRecord object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminBillingRecordMutation) OldNote(ctx context.Context) (v *string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldNote is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldNote requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldNote: %w", err)
-	}
-	return oldValue.Note, nil
-}
-
-// ClearNote clears the value of the "note" field.
-func (m *AdminBillingRecordMutation) ClearNote() {
-	m.note = nil
-	m.clearedFields[adminbillingrecord.FieldNote] = struct{}{}
-}
-
-// NoteCleared returns if the "note" field was cleared in this mutation.
-func (m *AdminBillingRecordMutation) NoteCleared() bool {
-	_, ok := m.clearedFields[adminbillingrecord.FieldNote]
-	return ok
-}
-
-// ResetNote resets all changes to the "note" field.
-func (m *AdminBillingRecordMutation) ResetNote() {
-	m.note = nil
-	delete(m.clearedFields, adminbillingrecord.FieldNote)
-}
-
-// SetCreatedBy sets the "created_by" field.
-func (m *AdminBillingRecordMutation) SetCreatedBy(i int64) {
-	m.created_by = &i
-	m.addcreated_by = nil
-}
-
-// CreatedBy returns the value of the "created_by" field in the mutation.
-func (m *AdminBillingRecordMutation) CreatedBy() (r int64, exists bool) {
-	v := m.created_by
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedBy returns the old "created_by" field's value of the AdminBillingRecord entity.
-// If the AdminBillingRecord object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminBillingRecordMutation) OldCreatedBy(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
-	}
-	return oldValue.CreatedBy, nil
-}
-
-// AddCreatedBy adds i to the "created_by" field.
-func (m *AdminBillingRecordMutation) AddCreatedBy(i int64) {
-	if m.addcreated_by != nil {
-		*m.addcreated_by += i
-	} else {
-		m.addcreated_by = &i
-	}
-}
-
-// AddedCreatedBy returns the value that was added to the "created_by" field in this mutation.
-func (m *AdminBillingRecordMutation) AddedCreatedBy() (r int64, exists bool) {
-	v := m.addcreated_by
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetCreatedBy resets all changes to the "created_by" field.
-func (m *AdminBillingRecordMutation) ResetCreatedBy() {
-	m.created_by = nil
-	m.addcreated_by = nil
-}
-
-// Where appends a list predicates to the AdminBillingRecordMutation builder.
-func (m *AdminBillingRecordMutation) Where(ps ...predicate.AdminBillingRecord) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// WhereP appends storage-level predicates to the AdminBillingRecordMutation builder. Using this method,
-// users can use type-assertion to append predicates that do not depend on any generated package.
-func (m *AdminBillingRecordMutation) WhereP(ps ...func(*sql.Selector)) {
-	p := make([]predicate.AdminBillingRecord, len(ps))
-	for i := range ps {
-		p[i] = ps[i]
-	}
-	m.Where(p...)
-}
-
-// Op returns the operation name.
-func (m *AdminBillingRecordMutation) Op() Op {
-	return m.op
-}
-
-// SetOp allows setting the mutation operation.
-func (m *AdminBillingRecordMutation) SetOp(op Op) {
-	m.op = op
-}
-
-// Type returns the node type of this mutation (AdminBillingRecord).
-func (m *AdminBillingRecordMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *AdminBillingRecordMutation) Fields() []string {
-	fields := make([]string, 0, 10)
-	if m.created_at != nil {
-		fields = append(fields, adminbillingrecord.FieldCreatedAt)
-	}
-	if m.updated_at != nil {
-		fields = append(fields, adminbillingrecord.FieldUpdatedAt)
-	}
-	if m.deleted_at != nil {
-		fields = append(fields, adminbillingrecord.FieldDeletedAt)
-	}
-	if m.person_name != nil {
-		fields = append(fields, adminbillingrecord.FieldPersonName)
-	}
-	if m.source != nil {
-		fields = append(fields, adminbillingrecord.FieldSource)
-	}
-	if m.cost != nil {
-		fields = append(fields, adminbillingrecord.FieldCost)
-	}
-	if m.profit != nil {
-		fields = append(fields, adminbillingrecord.FieldProfit)
-	}
-	if m.occurred_at != nil {
-		fields = append(fields, adminbillingrecord.FieldOccurredAt)
-	}
-	if m.note != nil {
-		fields = append(fields, adminbillingrecord.FieldNote)
-	}
-	if m.created_by != nil {
-		fields = append(fields, adminbillingrecord.FieldCreatedBy)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *AdminBillingRecordMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case adminbillingrecord.FieldCreatedAt:
-		return m.CreatedAt()
-	case adminbillingrecord.FieldUpdatedAt:
-		return m.UpdatedAt()
-	case adminbillingrecord.FieldDeletedAt:
-		return m.DeletedAt()
-	case adminbillingrecord.FieldPersonName:
-		return m.PersonName()
-	case adminbillingrecord.FieldSource:
-		return m.Source()
-	case adminbillingrecord.FieldCost:
-		return m.Cost()
-	case adminbillingrecord.FieldProfit:
-		return m.Profit()
-	case adminbillingrecord.FieldOccurredAt:
-		return m.OccurredAt()
-	case adminbillingrecord.FieldNote:
-		return m.Note()
-	case adminbillingrecord.FieldCreatedBy:
-		return m.CreatedBy()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *AdminBillingRecordMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case adminbillingrecord.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	case adminbillingrecord.FieldUpdatedAt:
-		return m.OldUpdatedAt(ctx)
-	case adminbillingrecord.FieldDeletedAt:
-		return m.OldDeletedAt(ctx)
-	case adminbillingrecord.FieldPersonName:
-		return m.OldPersonName(ctx)
-	case adminbillingrecord.FieldSource:
-		return m.OldSource(ctx)
-	case adminbillingrecord.FieldCost:
-		return m.OldCost(ctx)
-	case adminbillingrecord.FieldProfit:
-		return m.OldProfit(ctx)
-	case adminbillingrecord.FieldOccurredAt:
-		return m.OldOccurredAt(ctx)
-	case adminbillingrecord.FieldNote:
-		return m.OldNote(ctx)
-	case adminbillingrecord.FieldCreatedBy:
-		return m.OldCreatedBy(ctx)
-	}
-	return nil, fmt.Errorf("unknown AdminBillingRecord field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *AdminBillingRecordMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case adminbillingrecord.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	case adminbillingrecord.FieldUpdatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUpdatedAt(v)
-		return nil
-	case adminbillingrecord.FieldDeletedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDeletedAt(v)
-		return nil
-	case adminbillingrecord.FieldPersonName:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPersonName(v)
-		return nil
-	case adminbillingrecord.FieldSource:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSource(v)
-		return nil
-	case adminbillingrecord.FieldCost:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCost(v)
-		return nil
-	case adminbillingrecord.FieldProfit:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetProfit(v)
-		return nil
-	case adminbillingrecord.FieldOccurredAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetOccurredAt(v)
-		return nil
-	case adminbillingrecord.FieldNote:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetNote(v)
-		return nil
-	case adminbillingrecord.FieldCreatedBy:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedBy(v)
-		return nil
-	}
-	return fmt.Errorf("unknown AdminBillingRecord field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *AdminBillingRecordMutation) AddedFields() []string {
-	var fields []string
-	if m.addcost != nil {
-		fields = append(fields, adminbillingrecord.FieldCost)
-	}
-	if m.addprofit != nil {
-		fields = append(fields, adminbillingrecord.FieldProfit)
-	}
-	if m.addcreated_by != nil {
-		fields = append(fields, adminbillingrecord.FieldCreatedBy)
-	}
-	return fields
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *AdminBillingRecordMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case adminbillingrecord.FieldCost:
-		return m.AddedCost()
-	case adminbillingrecord.FieldProfit:
-		return m.AddedProfit()
-	case adminbillingrecord.FieldCreatedBy:
-		return m.AddedCreatedBy()
-	}
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *AdminBillingRecordMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	case adminbillingrecord.FieldCost:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddCost(v)
-		return nil
-	case adminbillingrecord.FieldProfit:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddProfit(v)
-		return nil
-	case adminbillingrecord.FieldCreatedBy:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddCreatedBy(v)
-		return nil
-	}
-	return fmt.Errorf("unknown AdminBillingRecord numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *AdminBillingRecordMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(adminbillingrecord.FieldDeletedAt) {
-		fields = append(fields, adminbillingrecord.FieldDeletedAt)
-	}
-	if m.FieldCleared(adminbillingrecord.FieldNote) {
-		fields = append(fields, adminbillingrecord.FieldNote)
-	}
-	return fields
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *AdminBillingRecordMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *AdminBillingRecordMutation) ClearField(name string) error {
-	switch name {
-	case adminbillingrecord.FieldDeletedAt:
-		m.ClearDeletedAt()
-		return nil
-	case adminbillingrecord.FieldNote:
-		m.ClearNote()
-		return nil
-	}
-	return fmt.Errorf("unknown AdminBillingRecord nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *AdminBillingRecordMutation) ResetField(name string) error {
-	switch name {
-	case adminbillingrecord.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	case adminbillingrecord.FieldUpdatedAt:
-		m.ResetUpdatedAt()
-		return nil
-	case adminbillingrecord.FieldDeletedAt:
-		m.ResetDeletedAt()
-		return nil
-	case adminbillingrecord.FieldPersonName:
-		m.ResetPersonName()
-		return nil
-	case adminbillingrecord.FieldSource:
-		m.ResetSource()
-		return nil
-	case adminbillingrecord.FieldCost:
-		m.ResetCost()
-		return nil
-	case adminbillingrecord.FieldProfit:
-		m.ResetProfit()
-		return nil
-	case adminbillingrecord.FieldOccurredAt:
-		m.ResetOccurredAt()
-		return nil
-	case adminbillingrecord.FieldNote:
-		m.ResetNote()
-		return nil
-	case adminbillingrecord.FieldCreatedBy:
-		m.ResetCreatedBy()
-		return nil
-	}
-	return fmt.Errorf("unknown AdminBillingRecord field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *AdminBillingRecordMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *AdminBillingRecordMutation) AddedIDs(name string) []ent.Value {
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *AdminBillingRecordMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *AdminBillingRecordMutation) RemovedIDs(name string) []ent.Value {
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *AdminBillingRecordMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *AdminBillingRecordMutation) EdgeCleared(name string) bool {
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *AdminBillingRecordMutation) ClearEdge(name string) error {
-	return fmt.Errorf("unknown AdminBillingRecord unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *AdminBillingRecordMutation) ResetEdge(name string) error {
-	return fmt.Errorf("unknown AdminBillingRecord edge %s", name)
 }
 
 // AnnouncementMutation represents an operation that mutates the Announcement nodes in the graph.
@@ -20425,6 +19470,1057 @@ func (m *ChannelMonitorRequestTemplateMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown ChannelMonitorRequestTemplate edge %s", name)
 }
 
+// CompositeModelRouteMutation represents an operation that mutates the CompositeModelRoute nodes in the graph.
+type CompositeModelRouteMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *int64
+	created_at      *time.Time
+	updated_at      *time.Time
+	deleted_at      *time.Time
+	public_model    *string
+	match_type      *string
+	target_platform *string
+	upstream_model  *string
+	endpoint        *string
+	priority        *int
+	addpriority     *int
+	enabled         *bool
+	notes           *string
+	clearedFields   map[string]struct{}
+	group           *int64
+	clearedgroup    bool
+	done            bool
+	oldValue        func(context.Context) (*CompositeModelRoute, error)
+	predicates      []predicate.CompositeModelRoute
+}
+
+var _ ent.Mutation = (*CompositeModelRouteMutation)(nil)
+
+// compositemodelrouteOption allows management of the mutation configuration using functional options.
+type compositemodelrouteOption func(*CompositeModelRouteMutation)
+
+// newCompositeModelRouteMutation creates new mutation for the CompositeModelRoute entity.
+func newCompositeModelRouteMutation(c config, op Op, opts ...compositemodelrouteOption) *CompositeModelRouteMutation {
+	m := &CompositeModelRouteMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCompositeModelRoute,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCompositeModelRouteID sets the ID field of the mutation.
+func withCompositeModelRouteID(id int64) compositemodelrouteOption {
+	return func(m *CompositeModelRouteMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CompositeModelRoute
+		)
+		m.oldValue = func(ctx context.Context) (*CompositeModelRoute, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CompositeModelRoute.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCompositeModelRoute sets the old CompositeModelRoute of the mutation.
+func withCompositeModelRoute(node *CompositeModelRoute) compositemodelrouteOption {
+	return func(m *CompositeModelRouteMutation) {
+		m.oldValue = func(context.Context) (*CompositeModelRoute, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CompositeModelRouteMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CompositeModelRouteMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CompositeModelRouteMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CompositeModelRouteMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CompositeModelRoute.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CompositeModelRouteMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CompositeModelRouteMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CompositeModelRoute entity.
+// If the CompositeModelRoute object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompositeModelRouteMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CompositeModelRouteMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CompositeModelRouteMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CompositeModelRouteMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CompositeModelRoute entity.
+// If the CompositeModelRoute object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompositeModelRouteMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CompositeModelRouteMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (m *CompositeModelRouteMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *CompositeModelRouteMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the CompositeModelRoute entity.
+// If the CompositeModelRoute object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompositeModelRouteMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *CompositeModelRouteMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[compositemodelroute.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *CompositeModelRouteMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[compositemodelroute.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *CompositeModelRouteMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, compositemodelroute.FieldDeletedAt)
+}
+
+// SetGroupID sets the "group_id" field.
+func (m *CompositeModelRouteMutation) SetGroupID(i int64) {
+	m.group = &i
+}
+
+// GroupID returns the value of the "group_id" field in the mutation.
+func (m *CompositeModelRouteMutation) GroupID() (r int64, exists bool) {
+	v := m.group
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroupID returns the old "group_id" field's value of the CompositeModelRoute entity.
+// If the CompositeModelRoute object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompositeModelRouteMutation) OldGroupID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroupID: %w", err)
+	}
+	return oldValue.GroupID, nil
+}
+
+// ResetGroupID resets all changes to the "group_id" field.
+func (m *CompositeModelRouteMutation) ResetGroupID() {
+	m.group = nil
+}
+
+// SetPublicModel sets the "public_model" field.
+func (m *CompositeModelRouteMutation) SetPublicModel(s string) {
+	m.public_model = &s
+}
+
+// PublicModel returns the value of the "public_model" field in the mutation.
+func (m *CompositeModelRouteMutation) PublicModel() (r string, exists bool) {
+	v := m.public_model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPublicModel returns the old "public_model" field's value of the CompositeModelRoute entity.
+// If the CompositeModelRoute object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompositeModelRouteMutation) OldPublicModel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPublicModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPublicModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPublicModel: %w", err)
+	}
+	return oldValue.PublicModel, nil
+}
+
+// ResetPublicModel resets all changes to the "public_model" field.
+func (m *CompositeModelRouteMutation) ResetPublicModel() {
+	m.public_model = nil
+}
+
+// SetMatchType sets the "match_type" field.
+func (m *CompositeModelRouteMutation) SetMatchType(s string) {
+	m.match_type = &s
+}
+
+// MatchType returns the value of the "match_type" field in the mutation.
+func (m *CompositeModelRouteMutation) MatchType() (r string, exists bool) {
+	v := m.match_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMatchType returns the old "match_type" field's value of the CompositeModelRoute entity.
+// If the CompositeModelRoute object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompositeModelRouteMutation) OldMatchType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMatchType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMatchType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMatchType: %w", err)
+	}
+	return oldValue.MatchType, nil
+}
+
+// ResetMatchType resets all changes to the "match_type" field.
+func (m *CompositeModelRouteMutation) ResetMatchType() {
+	m.match_type = nil
+}
+
+// SetTargetPlatform sets the "target_platform" field.
+func (m *CompositeModelRouteMutation) SetTargetPlatform(s string) {
+	m.target_platform = &s
+}
+
+// TargetPlatform returns the value of the "target_platform" field in the mutation.
+func (m *CompositeModelRouteMutation) TargetPlatform() (r string, exists bool) {
+	v := m.target_platform
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetPlatform returns the old "target_platform" field's value of the CompositeModelRoute entity.
+// If the CompositeModelRoute object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompositeModelRouteMutation) OldTargetPlatform(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetPlatform is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetPlatform requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetPlatform: %w", err)
+	}
+	return oldValue.TargetPlatform, nil
+}
+
+// ResetTargetPlatform resets all changes to the "target_platform" field.
+func (m *CompositeModelRouteMutation) ResetTargetPlatform() {
+	m.target_platform = nil
+}
+
+// SetUpstreamModel sets the "upstream_model" field.
+func (m *CompositeModelRouteMutation) SetUpstreamModel(s string) {
+	m.upstream_model = &s
+}
+
+// UpstreamModel returns the value of the "upstream_model" field in the mutation.
+func (m *CompositeModelRouteMutation) UpstreamModel() (r string, exists bool) {
+	v := m.upstream_model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpstreamModel returns the old "upstream_model" field's value of the CompositeModelRoute entity.
+// If the CompositeModelRoute object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompositeModelRouteMutation) OldUpstreamModel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpstreamModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpstreamModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpstreamModel: %w", err)
+	}
+	return oldValue.UpstreamModel, nil
+}
+
+// ResetUpstreamModel resets all changes to the "upstream_model" field.
+func (m *CompositeModelRouteMutation) ResetUpstreamModel() {
+	m.upstream_model = nil
+}
+
+// SetEndpoint sets the "endpoint" field.
+func (m *CompositeModelRouteMutation) SetEndpoint(s string) {
+	m.endpoint = &s
+}
+
+// Endpoint returns the value of the "endpoint" field in the mutation.
+func (m *CompositeModelRouteMutation) Endpoint() (r string, exists bool) {
+	v := m.endpoint
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEndpoint returns the old "endpoint" field's value of the CompositeModelRoute entity.
+// If the CompositeModelRoute object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompositeModelRouteMutation) OldEndpoint(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEndpoint is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEndpoint requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEndpoint: %w", err)
+	}
+	return oldValue.Endpoint, nil
+}
+
+// ResetEndpoint resets all changes to the "endpoint" field.
+func (m *CompositeModelRouteMutation) ResetEndpoint() {
+	m.endpoint = nil
+}
+
+// SetPriority sets the "priority" field.
+func (m *CompositeModelRouteMutation) SetPriority(i int) {
+	m.priority = &i
+	m.addpriority = nil
+}
+
+// Priority returns the value of the "priority" field in the mutation.
+func (m *CompositeModelRouteMutation) Priority() (r int, exists bool) {
+	v := m.priority
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPriority returns the old "priority" field's value of the CompositeModelRoute entity.
+// If the CompositeModelRoute object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompositeModelRouteMutation) OldPriority(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPriority is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPriority requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPriority: %w", err)
+	}
+	return oldValue.Priority, nil
+}
+
+// AddPriority adds i to the "priority" field.
+func (m *CompositeModelRouteMutation) AddPriority(i int) {
+	if m.addpriority != nil {
+		*m.addpriority += i
+	} else {
+		m.addpriority = &i
+	}
+}
+
+// AddedPriority returns the value that was added to the "priority" field in this mutation.
+func (m *CompositeModelRouteMutation) AddedPriority() (r int, exists bool) {
+	v := m.addpriority
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPriority resets all changes to the "priority" field.
+func (m *CompositeModelRouteMutation) ResetPriority() {
+	m.priority = nil
+	m.addpriority = nil
+}
+
+// SetEnabled sets the "enabled" field.
+func (m *CompositeModelRouteMutation) SetEnabled(b bool) {
+	m.enabled = &b
+}
+
+// Enabled returns the value of the "enabled" field in the mutation.
+func (m *CompositeModelRouteMutation) Enabled() (r bool, exists bool) {
+	v := m.enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnabled returns the old "enabled" field's value of the CompositeModelRoute entity.
+// If the CompositeModelRoute object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompositeModelRouteMutation) OldEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnabled: %w", err)
+	}
+	return oldValue.Enabled, nil
+}
+
+// ResetEnabled resets all changes to the "enabled" field.
+func (m *CompositeModelRouteMutation) ResetEnabled() {
+	m.enabled = nil
+}
+
+// SetNotes sets the "notes" field.
+func (m *CompositeModelRouteMutation) SetNotes(s string) {
+	m.notes = &s
+}
+
+// Notes returns the value of the "notes" field in the mutation.
+func (m *CompositeModelRouteMutation) Notes() (r string, exists bool) {
+	v := m.notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotes returns the old "notes" field's value of the CompositeModelRoute entity.
+// If the CompositeModelRoute object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompositeModelRouteMutation) OldNotes(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotes: %w", err)
+	}
+	return oldValue.Notes, nil
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (m *CompositeModelRouteMutation) ClearNotes() {
+	m.notes = nil
+	m.clearedFields[compositemodelroute.FieldNotes] = struct{}{}
+}
+
+// NotesCleared returns if the "notes" field was cleared in this mutation.
+func (m *CompositeModelRouteMutation) NotesCleared() bool {
+	_, ok := m.clearedFields[compositemodelroute.FieldNotes]
+	return ok
+}
+
+// ResetNotes resets all changes to the "notes" field.
+func (m *CompositeModelRouteMutation) ResetNotes() {
+	m.notes = nil
+	delete(m.clearedFields, compositemodelroute.FieldNotes)
+}
+
+// ClearGroup clears the "group" edge to the Group entity.
+func (m *CompositeModelRouteMutation) ClearGroup() {
+	m.clearedgroup = true
+	m.clearedFields[compositemodelroute.FieldGroupID] = struct{}{}
+}
+
+// GroupCleared reports if the "group" edge to the Group entity was cleared.
+func (m *CompositeModelRouteMutation) GroupCleared() bool {
+	return m.clearedgroup
+}
+
+// GroupIDs returns the "group" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// GroupID instead. It exists only for internal usage by the builders.
+func (m *CompositeModelRouteMutation) GroupIDs() (ids []int64) {
+	if id := m.group; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetGroup resets all changes to the "group" edge.
+func (m *CompositeModelRouteMutation) ResetGroup() {
+	m.group = nil
+	m.clearedgroup = false
+}
+
+// Where appends a list predicates to the CompositeModelRouteMutation builder.
+func (m *CompositeModelRouteMutation) Where(ps ...predicate.CompositeModelRoute) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CompositeModelRouteMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CompositeModelRouteMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CompositeModelRoute, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CompositeModelRouteMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CompositeModelRouteMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CompositeModelRoute).
+func (m *CompositeModelRouteMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CompositeModelRouteMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.created_at != nil {
+		fields = append(fields, compositemodelroute.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, compositemodelroute.FieldUpdatedAt)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, compositemodelroute.FieldDeletedAt)
+	}
+	if m.group != nil {
+		fields = append(fields, compositemodelroute.FieldGroupID)
+	}
+	if m.public_model != nil {
+		fields = append(fields, compositemodelroute.FieldPublicModel)
+	}
+	if m.match_type != nil {
+		fields = append(fields, compositemodelroute.FieldMatchType)
+	}
+	if m.target_platform != nil {
+		fields = append(fields, compositemodelroute.FieldTargetPlatform)
+	}
+	if m.upstream_model != nil {
+		fields = append(fields, compositemodelroute.FieldUpstreamModel)
+	}
+	if m.endpoint != nil {
+		fields = append(fields, compositemodelroute.FieldEndpoint)
+	}
+	if m.priority != nil {
+		fields = append(fields, compositemodelroute.FieldPriority)
+	}
+	if m.enabled != nil {
+		fields = append(fields, compositemodelroute.FieldEnabled)
+	}
+	if m.notes != nil {
+		fields = append(fields, compositemodelroute.FieldNotes)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CompositeModelRouteMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case compositemodelroute.FieldCreatedAt:
+		return m.CreatedAt()
+	case compositemodelroute.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case compositemodelroute.FieldDeletedAt:
+		return m.DeletedAt()
+	case compositemodelroute.FieldGroupID:
+		return m.GroupID()
+	case compositemodelroute.FieldPublicModel:
+		return m.PublicModel()
+	case compositemodelroute.FieldMatchType:
+		return m.MatchType()
+	case compositemodelroute.FieldTargetPlatform:
+		return m.TargetPlatform()
+	case compositemodelroute.FieldUpstreamModel:
+		return m.UpstreamModel()
+	case compositemodelroute.FieldEndpoint:
+		return m.Endpoint()
+	case compositemodelroute.FieldPriority:
+		return m.Priority()
+	case compositemodelroute.FieldEnabled:
+		return m.Enabled()
+	case compositemodelroute.FieldNotes:
+		return m.Notes()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CompositeModelRouteMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case compositemodelroute.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case compositemodelroute.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case compositemodelroute.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
+	case compositemodelroute.FieldGroupID:
+		return m.OldGroupID(ctx)
+	case compositemodelroute.FieldPublicModel:
+		return m.OldPublicModel(ctx)
+	case compositemodelroute.FieldMatchType:
+		return m.OldMatchType(ctx)
+	case compositemodelroute.FieldTargetPlatform:
+		return m.OldTargetPlatform(ctx)
+	case compositemodelroute.FieldUpstreamModel:
+		return m.OldUpstreamModel(ctx)
+	case compositemodelroute.FieldEndpoint:
+		return m.OldEndpoint(ctx)
+	case compositemodelroute.FieldPriority:
+		return m.OldPriority(ctx)
+	case compositemodelroute.FieldEnabled:
+		return m.OldEnabled(ctx)
+	case compositemodelroute.FieldNotes:
+		return m.OldNotes(ctx)
+	}
+	return nil, fmt.Errorf("unknown CompositeModelRoute field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CompositeModelRouteMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case compositemodelroute.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case compositemodelroute.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case compositemodelroute.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
+		return nil
+	case compositemodelroute.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroupID(v)
+		return nil
+	case compositemodelroute.FieldPublicModel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPublicModel(v)
+		return nil
+	case compositemodelroute.FieldMatchType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMatchType(v)
+		return nil
+	case compositemodelroute.FieldTargetPlatform:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetPlatform(v)
+		return nil
+	case compositemodelroute.FieldUpstreamModel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpstreamModel(v)
+		return nil
+	case compositemodelroute.FieldEndpoint:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEndpoint(v)
+		return nil
+	case compositemodelroute.FieldPriority:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPriority(v)
+		return nil
+	case compositemodelroute.FieldEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnabled(v)
+		return nil
+	case compositemodelroute.FieldNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotes(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CompositeModelRoute field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CompositeModelRouteMutation) AddedFields() []string {
+	var fields []string
+	if m.addpriority != nil {
+		fields = append(fields, compositemodelroute.FieldPriority)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CompositeModelRouteMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case compositemodelroute.FieldPriority:
+		return m.AddedPriority()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CompositeModelRouteMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case compositemodelroute.FieldPriority:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPriority(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CompositeModelRoute numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CompositeModelRouteMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(compositemodelroute.FieldDeletedAt) {
+		fields = append(fields, compositemodelroute.FieldDeletedAt)
+	}
+	if m.FieldCleared(compositemodelroute.FieldNotes) {
+		fields = append(fields, compositemodelroute.FieldNotes)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CompositeModelRouteMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CompositeModelRouteMutation) ClearField(name string) error {
+	switch name {
+	case compositemodelroute.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
+	case compositemodelroute.FieldNotes:
+		m.ClearNotes()
+		return nil
+	}
+	return fmt.Errorf("unknown CompositeModelRoute nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CompositeModelRouteMutation) ResetField(name string) error {
+	switch name {
+	case compositemodelroute.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case compositemodelroute.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case compositemodelroute.FieldDeletedAt:
+		m.ResetDeletedAt()
+		return nil
+	case compositemodelroute.FieldGroupID:
+		m.ResetGroupID()
+		return nil
+	case compositemodelroute.FieldPublicModel:
+		m.ResetPublicModel()
+		return nil
+	case compositemodelroute.FieldMatchType:
+		m.ResetMatchType()
+		return nil
+	case compositemodelroute.FieldTargetPlatform:
+		m.ResetTargetPlatform()
+		return nil
+	case compositemodelroute.FieldUpstreamModel:
+		m.ResetUpstreamModel()
+		return nil
+	case compositemodelroute.FieldEndpoint:
+		m.ResetEndpoint()
+		return nil
+	case compositemodelroute.FieldPriority:
+		m.ResetPriority()
+		return nil
+	case compositemodelroute.FieldEnabled:
+		m.ResetEnabled()
+		return nil
+	case compositemodelroute.FieldNotes:
+		m.ResetNotes()
+		return nil
+	}
+	return fmt.Errorf("unknown CompositeModelRoute field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CompositeModelRouteMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.group != nil {
+		edges = append(edges, compositemodelroute.EdgeGroup)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CompositeModelRouteMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case compositemodelroute.EdgeGroup:
+		if id := m.group; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CompositeModelRouteMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CompositeModelRouteMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CompositeModelRouteMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedgroup {
+		edges = append(edges, compositemodelroute.EdgeGroup)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CompositeModelRouteMutation) EdgeCleared(name string) bool {
+	switch name {
+	case compositemodelroute.EdgeGroup:
+		return m.clearedgroup
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CompositeModelRouteMutation) ClearEdge(name string) error {
+	switch name {
+	case compositemodelroute.EdgeGroup:
+		m.ClearGroup()
+		return nil
+	}
+	return fmt.Errorf("unknown CompositeModelRoute unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CompositeModelRouteMutation) ResetEdge(name string) error {
+	switch name {
+	case compositemodelroute.EdgeGroup:
+		m.ResetGroup()
+		return nil
+	}
+	return fmt.Errorf("unknown CompositeModelRoute edge %s", name)
+}
+
 // ErrorPassthroughRuleMutation represents an operation that mutates the ErrorPassthroughRule nodes in the graph.
 type ErrorPassthroughRuleMutation struct {
 	config
@@ -21815,6 +21911,7 @@ type GroupMutation struct {
 	sort_order                              *int
 	addsort_order                           *int
 	allow_messages_dispatch                 *bool
+	allow_live                              *bool
 	require_oauth_only                      *bool
 	require_privacy_set                     *bool
 	default_mapped_model                    *string
@@ -24130,6 +24227,42 @@ func (m *GroupMutation) ResetAllowMessagesDispatch() {
 	m.allow_messages_dispatch = nil
 }
 
+// SetAllowLive sets the "allow_live" field.
+func (m *GroupMutation) SetAllowLive(b bool) {
+	m.allow_live = &b
+}
+
+// AllowLive returns the value of the "allow_live" field in the mutation.
+func (m *GroupMutation) AllowLive() (r bool, exists bool) {
+	v := m.allow_live
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAllowLive returns the old "allow_live" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldAllowLive(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAllowLive is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAllowLive requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAllowLive: %w", err)
+	}
+	return oldValue.AllowLive, nil
+}
+
+// ResetAllowLive resets all changes to the "allow_live" field.
+func (m *GroupMutation) ResetAllowLive() {
+	m.allow_live = nil
+}
+
 // SetRequireOauthOnly sets the "require_oauth_only" field.
 func (m *GroupMutation) SetRequireOauthOnly(b bool) {
 	m.require_oauth_only = &b
@@ -24811,7 +24944,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 51)
+	fields := make([]string, 0, 52)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -24941,6 +25074,9 @@ func (m *GroupMutation) Fields() []string {
 	if m.allow_messages_dispatch != nil {
 		fields = append(fields, group.FieldAllowMessagesDispatch)
 	}
+	if m.allow_live != nil {
+		fields = append(fields, group.FieldAllowLive)
+	}
 	if m.require_oauth_only != nil {
 		fields = append(fields, group.FieldRequireOauthOnly)
 	}
@@ -25059,6 +25195,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.SortOrder()
 	case group.FieldAllowMessagesDispatch:
 		return m.AllowMessagesDispatch()
+	case group.FieldAllowLive:
+		return m.AllowLive()
 	case group.FieldRequireOauthOnly:
 		return m.RequireOauthOnly()
 	case group.FieldRequirePrivacySet:
@@ -25170,6 +25308,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldSortOrder(ctx)
 	case group.FieldAllowMessagesDispatch:
 		return m.OldAllowMessagesDispatch(ctx)
+	case group.FieldAllowLive:
+		return m.OldAllowLive(ctx)
 	case group.FieldRequireOauthOnly:
 		return m.OldRequireOauthOnly(ctx)
 	case group.FieldRequirePrivacySet:
@@ -25495,6 +25635,13 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAllowMessagesDispatch(v)
+		return nil
+	case group.FieldAllowLive:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAllowLive(v)
 		return nil
 	case group.FieldRequireOauthOnly:
 		v, ok := value.(bool)
@@ -26083,6 +26230,9 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldAllowMessagesDispatch:
 		m.ResetAllowMessagesDispatch()
+		return nil
+	case group.FieldAllowLive:
+		m.ResetAllowLive()
 		return nil
 	case group.FieldRequireOauthOnly:
 		m.ResetRequireOauthOnly()

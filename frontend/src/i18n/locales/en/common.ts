@@ -103,6 +103,23 @@ export default {
     }
   },
 
+  adminCompliance: {
+    title: 'Deployment and Operation Compliance Acknowledgment',
+    blockingNotice: 'Deployment and operation compliance acknowledgment is required before continuing to use the console.',
+    riskNotice: 'This acknowledgment provides clear, conspicuous, and reproducible notice of compliance obligations and operation risks for self-hosted instances.',
+    version: 'Document Version',
+    openDocument: 'Open the GitHub document',
+    documentSource: 'The agreement text comes from Markdown files in this project repository. When the agreement content changes, the document version must be incremented; acknowledgments of older versions become invalid and console users must acknowledge again.',
+    inputLabel: 'Type the following confirmation phrase exactly',
+    inputPlaceholder: 'Type the confirmation phrase to continue',
+    inputMismatch: 'The confirmation phrase does not match. Type the displayed text exactly.',
+    legalNote: 'This acknowledgment defines the no-affiliation relationship and responsibility boundary between self-hosted instances and the open-source project, copyright holders, contributors, and maintainers. The party that deploys, operates, or controls the relevant instance remains independently responsible for its applicable obligations.',
+    logout: 'Log out',
+    accept: 'Acknowledge and Continue',
+    accepted: 'Compliance acknowledgment recorded',
+    acceptFailed: 'Failed to submit acknowledgment'
+  },
+
   legal: {
     loadFailed: 'Failed to load document',
     retryLater: 'Refresh the page and try again later.',
@@ -111,6 +128,7 @@ export default {
     updatedAt: 'Updated: {date}',
     empty: 'No content',
     loginAgreement: 'Login Agreement',
+    adminCompliance: 'Deployment and Operation Compliance Commitment',
     loginAgreementPrompt: {
       checkboxPrefix: 'I have read and agree to ',
       documentSeparator: ', ',
@@ -135,7 +153,6 @@ export default {
     dashboard: 'Dashboard',
     announcements: 'Announcements',
     apiKeys: 'API Keys',
-    imageGeneration: 'Image',
     batchImage: 'Batch Images',
     usage: 'Usage',
     redeem: 'Redeem',
@@ -180,96 +197,6 @@ export default {
     contentModeration: 'Content Moderation',
     promptAudit: 'Prompt Audit',
     auditLogs: 'Audit Logs',
-  },
-
-  // Image generation page
-  images: {
-    // Empty / keys
-    emptyKeysTitle: 'No usable API keys yet',
-    emptyKeysDescription: 'Generating images needs an active API key. Create or enable one first.',
-    createKey: 'Create key',
-    manageKeys: 'Manage keys',
-    loadKeysFailed: 'Failed to load keys',
-    // History / sidebar
-    newChat: 'New chat',
-    clearHistory: 'Clear history',
-    history: 'History',
-    emptyHistory: 'No image records yet. They will show up here after you enter a prompt.',
-    renameConversation: 'Rename conversation',
-    processingCount: 'Running {count}',
-    queuedCount: 'Queued {count}',
-    // Empty state
-    startTitle: 'Turn ideas into images',
-    startDescription: 'Keep your local history in one window and start new edits from any existing result.',
-    // Turn meta
-    turnNumber: 'Round {count}',
-    modeGenerate: 'Text to image',
-    modeEdit: 'Image edit',
-    reuseConfig: 'Reuse config',
-    deletePrompt: 'Delete prompt record',
-    continueEdit: 'Add to edit',
-    countLabel: '{count} images',
-    resultNumber: 'Result {count}',
-    imageNofM: 'Image {index}/{total}',
-    // Status
-    queued: 'Queued',
-    generating: 'Processing',
-    generationComplete: 'Done',
-    generationFailed: 'Generation failed',
-    interrupted: 'Generation interrupted, please retry',
-    // Generating placeholder
-    generatingTitle: 'Generating',
-    generatingElapsed: 'Elapsed {time}',
-    generatingQueued: 'Queuing...',
-    generatingRendering: 'Rendering...',
-    generatingFinalizing: 'Finishing up...',
-    generatingPlaceholder: 'Generating',
-    // Actions
-    retryThisImage: 'Regenerate this one',
-    regenerateAll: 'Regenerate all',
-    deleteResults: 'Delete results',
-    dismissErrors: 'Dismiss errors',
-    download: 'Download',
-    prevImage: 'Previous image',
-    nextImage: 'Next image',
-    // Composer
-    uploadReference: 'Upload',
-    addReference: 'Add reference',
-    removeReference: 'Remove reference',
-    editPlaceholder: 'Describe how you want to modify the reference image',
-    promptPlaceholder: 'Describe the image you want, or paste an image directly',
-    generate: 'Generate',
-    editImage: 'Edit image',
-    addedToEdit: 'Added to edit',
-    readReferenceFailed: 'Failed to read reference image',
-    noImageData: 'No image data returned',
-    // Settings panel
-    settingsTitle: 'Image settings',
-    apiKey: 'API key',
-    selectKey: 'Select key',
-    model: 'Model',
-    selectModel: 'Select model',
-    loadingModels: 'Loading models...',
-    loadModelsFailed: 'Failed to load model list, fell back to default model',
-    qualityLabel: 'Quality',
-    quality: {
-      auto: 'Auto',
-      low: 'Low',
-      medium: 'Medium',
-      high: 'High',
-    },
-    sizeLabel: 'Size',
-    aspectRatio: 'Aspect ratio',
-    countSetting: 'Count',
-    // Confirm dialogs
-    clearHistoryConfirmTitle: 'Clear all history',
-    clearHistoryConfirmDescription: 'This deletes all locally stored image records and cannot be undone.',
-    deleteConversationConfirmTitle: 'Delete this conversation',
-    deleteConversationConfirmDescription: 'This deletes all records in this conversation and cannot be undone.',
-    deletePromptConfirmTitle: 'Delete prompt record',
-    deletePromptConfirmDescription: "Hides only this round's prompt text; the results are kept.",
-    deleteResultsConfirmTitle: 'Delete results',
-    deleteResultsConfirmDescription: "Hides only this round's results; the prompt is kept.",
   },
 
   // Auth

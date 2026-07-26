@@ -65,6 +65,7 @@
                   </div>
                   <div class="mt-1.5 flex items-center gap-3 text-sm">
                     <span class="inline-flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                      <PlatformIcon :platform="config.platform" size="xs" />
                       <span>{{ config.platform }}</span>
                     </span>
                     <span class="text-gray-300 dark:text-dark-500">•</span>
@@ -122,6 +123,7 @@
                   </div>
                   <div class="mt-1.5 flex items-center gap-3 text-sm">
                     <span class="inline-flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                      <PlatformIcon :platform="config.platform" size="xs" />
                       <span>{{ config.platform }}</span>
                     </span>
                     <span class="text-gray-300 dark:text-dark-500">•</span>
@@ -183,6 +185,7 @@ import { useAppStore } from '@/stores/app'
 import { adminAPI } from '@/api/admin'
 import type { AdminUser, Group, GroupPlatform } from '@/types'
 import BaseDialog from '@/components/common/BaseDialog.vue'
+import PlatformIcon from '@/components/common/PlatformIcon.vue'
 
 interface GroupRateConfig {
   groupId: number

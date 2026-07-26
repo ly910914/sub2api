@@ -7,6 +7,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useAdminSettingsStore } from '@/stores/adminSettings'
+import { useAdminComplianceStore } from '@/stores/adminCompliance'
 import { useNavigationLoadingState } from '@/composables/useNavigationLoading'
 import { useRoutePrefetch } from '@/composables/useRoutePrefetch'
 import { getSetupStatus } from '@/api/setup'
@@ -202,19 +203,6 @@ const routes: RouteRecordRaw[] = [
       title: 'API Keys',
       titleKey: 'keys.title',
       descriptionKey: 'keys.description'
-    }
-  },
-  {
-    path: '/image',
-    name: 'ImageChat',
-    component: () => import('@/views/user/ImageChatView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: false,
-      title: 'Image',
-      titleKey: 'nav.imageGeneration',
-      descriptionKey: 'images.startDescription',
-      requiresImageGeneration: true
     }
   },
   {
@@ -625,18 +613,6 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/admin/billing',
-    name: 'AdminBilling',
-    component: () => import('@/views/admin/BillingView.vue'),
-    meta: {
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: 'Manual Billing',
-      titleKey: 'admin.billing.title',
-      descriptionKey: 'admin.billing.description'
-    }
-  },
-  {
     path: '/admin/affiliates',
     redirect: '/admin/affiliates/invites'
   },
@@ -860,10 +836,25 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
 
+  if (requiresAdmin && authStore.isAdmin) {
+    const adminComplianceStore = useAdminComplianceStore()
+    if (!adminComplianceStore.initialized) {
+      try {
+        await adminComplianceStore.fetchStatus()
+      } catch (error) {
+        const err = error as { status?: number; code?: string; metadata?: Record<string, string> }
+        if (err.status === 423 && err.code === 'ADMIN_COMPLIANCE_ACK_REQUIRED') {
+          adminComplianceStore.requireAcknowledgement(err.metadata)
+        }
+      }
+    }
+  }
+
+
   // 公共设置可能尚未加载（App.vue 的 onMounted 异步拉取晚于首次导航，且纯静态部署
   // 无 __APP_CONFIG__ 注入）。此时 cachedPublicSettings 为空会把 payment/risk_control
   // 误判为“未启用”而错误拦截，故这里先确保设置加载完成。
-  if ((to.meta.requiresPayment || to.meta.requiresRiskControl || to.meta.requiresImageGeneration) && !appStore.publicSettingsLoaded) {
+  if ((to.meta.requiresPayment || to.meta.requiresRiskControl) && !appStore.publicSettingsLoaded) {
     try {
       await appStore.fetchPublicSettings()
     } catch (error) {
@@ -888,15 +879,6 @@ router.beforeEach(async (to, _from, next) => {
     appStore.cachedPublicSettings?.risk_control_enabled === false
   ) {
     next(authStore.isAdmin ? '/admin/settings' : '/dashboard')
-    return
-  }
-
-  if (
-    to.meta.requiresImageGeneration &&
-    appStore.publicSettingsLoaded &&
-    appStore.cachedPublicSettings?.image_generation_enabled !== true
-  ) {
-    next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
     return
   }
 

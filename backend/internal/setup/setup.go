@@ -79,7 +79,6 @@ type SetupConfig struct {
 	Admin                   AdminConfig    `json:"admin" yaml:"-"` // Not stored in config file
 	Server                  ServerConfig   `json:"server" yaml:"server"`
 	JWT                     JWTConfig      `json:"jwt" yaml:"jwt"`
-	Update                  UpdateConfig   `json:"update" yaml:"update"`
 	Timezone                string         `json:"timezone" yaml:"timezone"` // e.g. "Asia/Shanghai", "UTC"
 	MigrationTimeoutSeconds int            `json:"migration_timeout_seconds" yaml:"migration_timeout_seconds,omitempty"`
 }
@@ -116,10 +115,6 @@ type ServerConfig struct {
 type JWTConfig struct {
 	Secret     string `json:"secret" yaml:"secret"`
 	ExpireHour int    `json:"expire_hour" yaml:"expire_hour"`
-}
-
-type UpdateConfig struct {
-	ProxyURL string `json:"proxy_url" yaml:"proxy_url"`
 }
 
 const (
@@ -475,8 +470,7 @@ func writeConfigFile(cfg *SetupConfig) error {
 			RequestsPerMinute int `yaml:"requests_per_minute"`
 			BurstSize         int `yaml:"burst_size"`
 		} `yaml:"rate_limit"`
-		Update   UpdateConfig `yaml:"update"`
-		Timezone string       `yaml:"timezone"`
+		Timezone string `yaml:"timezone"`
 	}{
 		Server:   cfg.Server,
 		Database: cfg.Database,
@@ -506,7 +500,6 @@ func writeConfigFile(cfg *SetupConfig) error {
 			RequestsPerMinute: 60,
 			BurstSize:         10,
 		},
-		Update:   cfg.Update,
 		Timezone: tz,
 	}
 
@@ -596,9 +589,6 @@ func AutoSetupFromEnv() error {
 		JWT: JWTConfig{
 			Secret:     getEnvOrDefault("JWT_SECRET", ""),
 			ExpireHour: getEnvIntOrDefault("JWT_EXPIRE_HOUR", 24),
-		},
-		Update: UpdateConfig{
-			ProxyURL: getEnvOrDefault("UPDATE_PROXY_URL", ""),
 		},
 		Timezone:                tz,
 		MigrationTimeoutSeconds: getEnvIntOrDefault("SETUP_MIGRATION_TIMEOUT_SECONDS", 0),

@@ -30,7 +30,7 @@ var (
 const (
 	updateCacheKey = "update_check_cache"
 	updateCacheTTL = 1200 // 20 minutes
-	githubRepo     = "ly910914/sub2api"
+	githubRepo     = "Wei-Shaw/sub2api"
 
 	// Security: allowed download domains for updates
 	allowedDownloadHost = "github.com"
@@ -603,14 +603,9 @@ func (s *UpdateService) getFromCache(ctx context.Context) (*UpdateInfo, error) {
 		Latest      string       `json:"latest"`
 		ReleaseInfo *ReleaseInfo `json:"release_info"`
 		Timestamp   int64        `json:"timestamp"`
-		Repository  string       `json:"repository"`
 	}
 	if err := json.Unmarshal([]byte(data), &cached); err != nil {
 		return nil, err
-	}
-
-	if cached.Repository != githubRepo {
-		return nil, fmt.Errorf("cache repository mismatch")
 	}
 
 	if time.Now().Unix()-cached.Timestamp > updateCacheTTL {
@@ -632,12 +627,10 @@ func (s *UpdateService) saveToCache(ctx context.Context, info *UpdateInfo) {
 		Latest      string       `json:"latest"`
 		ReleaseInfo *ReleaseInfo `json:"release_info"`
 		Timestamp   int64        `json:"timestamp"`
-		Repository  string       `json:"repository"`
 	}{
 		Latest:      info.LatestVersion,
 		ReleaseInfo: info.ReleaseInfo,
 		Timestamp:   time.Now().Unix(),
-		Repository:  githubRepo,
 	}
 
 	data, _ := json.Marshal(cacheData)

@@ -102,8 +102,6 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 
 		RiskControlEnabled: settings.RiskControlEnabled,
 
-		ImageGenerationEnabled: settings.ImageGenerationEnabled,
-
 		AllowUserViewErrorRequests: settings.AllowUserViewErrorRequests,
 	})
 }

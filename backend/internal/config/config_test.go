@@ -497,6 +497,22 @@ func TestLoadDefaultOpenAIHTTP2Enabled(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, cfg.Gateway.OpenAIHTTP2.Enabled)
 	require.True(t, cfg.Gateway.OpenAIHTTP2.AllowProxyFallbackToHTTP1)
+	require.Equal(t, 2, cfg.Gateway.OpenAIProxyStreamCircuit.FailureThreshold)
+	require.Equal(t, 60, cfg.Gateway.OpenAIProxyStreamCircuit.WindowSeconds)
+	require.Equal(t, 600, cfg.Gateway.OpenAIProxyStreamCircuit.TTLSeconds)
+}
+
+func TestLoadOpenAIProxyStreamCircuitFromEnv(t *testing.T) {
+	resetViperWithJWTSecret(t)
+	t.Setenv("GATEWAY_OPENAI_PROXY_STREAM_CIRCUIT_FAILURE_THRESHOLD", "3")
+	t.Setenv("GATEWAY_OPENAI_PROXY_STREAM_CIRCUIT_WINDOW_SECONDS", "90")
+	t.Setenv("GATEWAY_OPENAI_PROXY_STREAM_CIRCUIT_TTL_SECONDS", "420")
+
+	cfg, err := Load()
+	require.NoError(t, err)
+	require.Equal(t, 3, cfg.Gateway.OpenAIProxyStreamCircuit.FailureThreshold)
+	require.Equal(t, 90, cfg.Gateway.OpenAIProxyStreamCircuit.WindowSeconds)
+	require.Equal(t, 420, cfg.Gateway.OpenAIProxyStreamCircuit.TTLSeconds)
 }
 
 func TestLoadOpenAIHTTP2DisabledFromEnv(t *testing.T) {
@@ -733,20 +749,6 @@ func TestLoadJWTAccessTokenExpireMinutesFromEnv(t *testing.T) {
 
 	if cfg.JWT.AccessTokenExpireMinutes != 90 {
 		t.Fatalf("JWT.AccessTokenExpireMinutes = %d, want 90", cfg.JWT.AccessTokenExpireMinutes)
-	}
-}
-
-func TestLoadUpdateProxyURLFromEnv(t *testing.T) {
-	resetViperWithJWTSecret(t)
-	t.Setenv("UPDATE_PROXY_URL", "http://127.0.0.1:10809")
-
-	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() error: %v", err)
-	}
-
-	if cfg.Update.ProxyURL != "http://127.0.0.1:10809" {
-		t.Fatalf("Update.ProxyURL = %q, want %q", cfg.Update.ProxyURL, "http://127.0.0.1:10809")
 	}
 }
 
@@ -1757,6 +1759,21 @@ func TestValidateConfigErrors(t *testing.T) {
 			name:    "gateway openai http2 fallback ttl",
 			mutate:  func(c *Config) { c.Gateway.OpenAIHTTP2.FallbackTTLSeconds = -1 },
 			wantErr: "gateway.openai_http2.fallback_ttl_seconds",
+		},
+		{
+			name:    "gateway openai proxy stream circuit threshold",
+			mutate:  func(c *Config) { c.Gateway.OpenAIProxyStreamCircuit.FailureThreshold = -1 },
+			wantErr: "gateway.openai_proxy_stream_circuit.failure_threshold",
+		},
+		{
+			name:    "gateway openai proxy stream circuit window",
+			mutate:  func(c *Config) { c.Gateway.OpenAIProxyStreamCircuit.WindowSeconds = -1 },
+			wantErr: "gateway.openai_proxy_stream_circuit.window_seconds",
+		},
+		{
+			name:    "gateway openai proxy stream circuit ttl",
+			mutate:  func(c *Config) { c.Gateway.OpenAIProxyStreamCircuit.TTLSeconds = -1 },
+			wantErr: "gateway.openai_proxy_stream_circuit.ttl_seconds",
 		},
 		{
 			name:    "gateway stream data interval range",

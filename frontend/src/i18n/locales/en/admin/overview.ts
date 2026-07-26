@@ -80,55 +80,6 @@ export default {
       failedToLoad: 'Failed to load dashboard statistics'
     },
 
-    billing: {
-      title: 'Billing Stats',
-      description: 'Manually track order cost and profit, grouped by owner',
-      searchPerson: 'Search owner',
-      fromDate: 'Start date',
-      toDate: 'End date',
-      createRecord: 'New Record',
-      editRecord: 'Edit Record',
-      deleteRecord: 'Delete Record',
-      deleteConfirm: 'Are you sure you want to delete this billing record?',
-      creating: 'Creating...',
-      perPersonTitle: 'Stats by Owner',
-      noStatsData: 'No stats data',
-      personName: 'Owner',
-      personNamePlaceholder: 'Enter owner',
-      source: 'Source',
-      sourcePlaceholder: 'Enter source',
-      cost: 'Cost',
-      profit: 'Profit',
-      revenue: 'Revenue',
-      count: 'Count',
-      occurredAt: 'Occurred At',
-      note: 'Note',
-      notePlaceholder: 'Enter note',
-      trendTitle: 'Cost and Profit Trend',
-      totalCost: 'Total Cost',
-      totalProfit: 'Total Profit',
-      totalRevenue: 'Total Revenue',
-      netProfit: 'Net Profit',
-      failedToLoad: 'Failed to load billing records',
-      failedToLoadStats: 'Failed to load billing stats',
-      recordCreated: 'Billing record created',
-      failedToCreate: 'Failed to create billing record',
-      recordUpdated: 'Billing record updated',
-      failedToUpdate: 'Failed to update billing record',
-      recordDeleted: 'Billing record deleted',
-      failedToDelete: 'Failed to delete billing record',
-      columns: {
-        personName: 'Owner',
-        source: 'Source',
-        cost: 'Cost',
-        profit: 'Profit',
-        revenue: 'Revenue',
-        occurredAt: 'Occurred At',
-        note: 'Note',
-        actions: 'Actions'
-      }
-    },
-
     backup: {
       title: 'Database Backup',
       description: 'Full database backup to S3-compatible storage with scheduled backup and restore',
@@ -993,6 +944,7 @@ export default {
         gemini: 'Gemini',
         antigravity: 'Antigravity',
         grok: 'Grok',
+        composite: 'Composite',
       },
       deleteConfirm:
         "Are you sure you want to delete '{name}'? All associated API keys will no longer belong to any group.",
@@ -1063,6 +1015,55 @@ export default {
         selectAll: 'Select all',
         invertSelection: 'Invert'
       },
+      compositeRoutes: {
+        action: 'Routes',
+        title: 'Composite Routes',
+        titleWithGroup: 'Composite Routes: {name}',
+        routes: 'Saved Routes',
+        empty: 'No composite routes configured',
+        publicModel: 'Public Model',
+        target: 'Target',
+        scope: 'Scope',
+        priority: 'Priority',
+        addRoute: 'Add Route',
+        editRoute: 'Edit Route',
+        matchType: 'Match',
+        endpoint: 'Endpoint',
+        targetPlatform: 'Target Platform',
+        upstreamModel: 'Upstream Model',
+        notes: 'Notes',
+        enabled: 'Enabled',
+        preview: 'Preview',
+        matched: 'Matched',
+        notMatched: 'No Match',
+        publicModelRequired: 'Public model is required',
+        routeCreated: 'Composite route created',
+        routeUpdated: 'Composite route updated',
+        routeDeleted: 'Composite route deleted',
+        failedToLoad: 'Failed to load composite routes',
+        failedToSave: 'Failed to save composite route',
+        failedToDelete: 'Failed to delete composite route',
+        failedToPreview: 'Failed to preview composite route',
+        deleteConfirm: 'Delete this composite route?',
+        endpoints: {
+          any: 'Any',
+          messages: 'Messages',
+          countTokens: 'Count Tokens',
+          responses: 'Responses',
+          chatCompletions: 'Chat Completions',
+          embeddings: 'Embeddings',
+          images: 'Images',
+          gemini: 'Gemini Native'
+        },
+        match: {
+          exact: 'Exact',
+          prefix: 'Prefix'
+        },
+        sources: {
+          route: 'Route',
+          detector: 'Detector'
+        }
+      },
       claudeCode: {
         title: 'Claude Code Client Restriction',
         tooltip: 'When enabled, this group only allows official Claude Code clients. Non-Claude Code requests will be rejected or fallback to the specified group.',
@@ -1093,6 +1094,14 @@ export default {
         targetModel: 'Target Model',
         targetModelPlaceholder: 'e.g., gpt-5.4',
         removeExactMapping: 'Remove Exact Mapping'
+      },
+      openaiLive: {
+        title: 'OpenAI Live',
+        allow: 'Allow Live access',
+        hint: 'When enabled, API keys in this OpenAI group can create and control Live voice sessions. Disabled by default. The Sub2API server must run on Apple Silicon macOS with the official ChatGPT app installed; client platforms are unrestricted.',
+        unsupportedTitle: 'Current server does not support Live',
+        unsupportedMessage: 'This Sub2API server cannot generate the required Live attestation. Live will not work even if enabled. Continue anyway?',
+        enableAnyway: 'Enable anyway'
       },
       invalidRequestFallback: {
         title: 'Invalid Request Fallback Group',

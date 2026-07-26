@@ -25,7 +25,6 @@ const appStore = vi.hoisted(() => ({
   cachedPublicSettings: null as null | {
     payment_enabled?: boolean
     risk_control_enabled?: boolean
-    image_generation_enabled?: boolean
     custom_menu_items?: []
   },
   fetchPublicSettings: vi.fn(),
@@ -52,6 +51,14 @@ vi.mock('@/stores/app', () => ({
 
 vi.mock('@/stores/adminSettings', () => ({
   useAdminSettingsStore: () => ({ customMenuItems: [] }),
+}))
+
+vi.mock('@/stores/adminCompliance', () => ({
+  useAdminComplianceStore: () => ({
+    initialized: true,
+    fetchStatus: vi.fn(),
+    requireAcknowledgement: vi.fn(),
+  }),
 }))
 
 vi.mock('@/composables/useNavigationLoading', () => ({

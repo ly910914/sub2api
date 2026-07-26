@@ -9,7 +9,6 @@
       <GroupBadge
         :name="name"
         :platform="platform"
-        :icon-platforms="iconPlatforms"
         :subscription-type="subscriptionType"
         :show-rate="false"
         class="groupOptionItemBadge"
@@ -26,7 +25,7 @@
     <!-- Right: rate pill + checkmark (vertically centered to first row) -->
     <div class="flex shrink-0 items-center gap-2 pt-0.5">
       <div class="flex shrink-0 flex-col items-end gap-1">
-        <!-- Rate pill -->
+        <!-- Rate pill (platform color) -->
         <span v-if="rateMultiplier !== undefined" :class="['inline-flex items-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold', ratePillClass]">
           <template v-if="hasCustomRate">
             <span class="mr-1 line-through opacity-50">{{ rateMultiplier }}x</span>
@@ -38,7 +37,7 @@
         </span>
         <span
           v-if="hasPeakRate"
-          class="inline-flex items-center whitespace-nowrap rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-dark-700 dark:text-gray-300"
+          class="inline-flex items-center whitespace-nowrap rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
           :title="peakRateTitle"
         >
           {{ peakRateText }}
@@ -72,7 +71,6 @@ const { t } = useI18n()
 interface Props {
   name: string
   platform: GroupPlatform
-  iconPlatforms?: GroupPlatform[]
   subscriptionType?: SubscriptionType
   rateMultiplier?: number
   userRateMultiplier?: number | null
@@ -125,8 +123,18 @@ const peakRateTitle = computed(() => {
   return t('common.peakRateTooltip', { window: peakRateText.value })
 })
 
+// Rate pill color matches platform badge color
 const ratePillClass = computed(() => {
-  return 'bg-gray-100 text-gray-700 dark:bg-dark-700 dark:text-gray-300'
+  switch (props.platform) {
+    case 'anthropic':
+      return 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
+    case 'openai':
+      return 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+    case 'gemini':
+      return 'bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400'
+    default: // antigravity and others
+      return 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400'
+  }
 })
 </script>
 
