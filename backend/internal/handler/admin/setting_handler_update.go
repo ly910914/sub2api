@@ -314,7 +314,8 @@ type UpdateSettingsRequest struct {
 	AffiliateEnabled *bool `json:"affiliate_enabled"`
 
 	// 风控中心功能开关
-	RiskControlEnabled *bool `json:"risk_control_enabled"`
+	RiskControlEnabled     *bool `json:"risk_control_enabled"`
+	ImageGenerationEnabled *bool `json:"image_generation_enabled"`
 
 	// cyber 会话屏蔽开关 + TTL
 	CyberSessionBlockEnabled    *bool `json:"cyber_session_block_enabled"`
@@ -1617,6 +1618,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.RiskControlEnabled
 		}(),
+		ImageGenerationEnabled: func() bool {
+			if req.ImageGenerationEnabled != nil {
+				return *req.ImageGenerationEnabled
+			}
+			return previousSettings.ImageGenerationEnabled
+		}(),
 		CyberSessionBlockEnabled: func() bool {
 			if req.CyberSessionBlockEnabled != nil {
 				return *req.CyberSessionBlockEnabled
@@ -1998,6 +2005,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		AffiliateEnabled: updatedSettings.AffiliateEnabled,
 
 		RiskControlEnabled:          updatedSettings.RiskControlEnabled,
+		ImageGenerationEnabled:      updatedSettings.ImageGenerationEnabled,
 		CyberSessionBlockEnabled:    updatedSettings.CyberSessionBlockEnabled,
 		CyberSessionBlockTTLSeconds: updatedSettings.CyberSessionBlockTTLSeconds,
 		AllowUserViewErrorRequests:  updatedSettings.AllowUserViewErrorRequests,

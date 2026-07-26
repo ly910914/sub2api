@@ -26,6 +26,7 @@ func ProvideAdminHandlers(
 	proxyHandler *admin.ProxyHandler,
 	redeemHandler *admin.RedeemHandler,
 	promoHandler *admin.PromoHandler,
+	adminBillingHandler *admin.AdminBillingHandler,
 	settingHandler *admin.SettingHandler,
 	opsHandler *admin.OpsHandler,
 	systemHandler *admin.SystemHandler,
@@ -43,7 +44,6 @@ func ProvideAdminHandlers(
 	promptAuditHandler *securityaudit.PromptAdminHandler,
 	paymentHandler *admin.PaymentHandler,
 	affiliateHandler *admin.AffiliateHandler,
-	complianceHandler *admin.ComplianceHandler,
 	auditLogHandler *admin.AuditLogHandler,
 	upstreamBillingProbe *service.UpstreamBillingProbeService,
 	ollamaCloudUsage *service.OllamaCloudUsageService,
@@ -66,6 +66,7 @@ func ProvideAdminHandlers(
 		Proxy:                  proxyHandler,
 		Redeem:                 redeemHandler,
 		Promo:                  promoHandler,
+		Billing:                adminBillingHandler,
 		Setting:                settingHandler,
 		Ops:                    opsHandler,
 		System:                 systemHandler,
@@ -83,7 +84,6 @@ func ProvideAdminHandlers(
 		PromptAudit:            promptAuditHandler,
 		Payment:                paymentHandler,
 		Affiliate:              affiliateHandler,
-		Compliance:             complianceHandler,
 		AuditLog:               auditLogHandler,
 	}
 }
@@ -246,6 +246,7 @@ var ProviderSet = wire.NewSet(
 	admin.NewProxyHandler,
 	admin.NewRedeemHandler,
 	admin.NewPromoHandler,
+	admin.NewAdminBillingHandler,
 	ProvideAdminSettingHandler,
 	admin.NewOpsHandler,
 	ProvideSystemHandler,
@@ -262,7 +263,6 @@ var ProviderSet = wire.NewSet(
 	admin.NewContentModerationHandler,
 	admin.NewPaymentHandler,
 	admin.NewAffiliateHandler,
-	admin.NewComplianceHandler,
 	admin.NewAuditLogHandler,
 
 	// AdminHandlers and Handlers constructors

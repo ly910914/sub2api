@@ -103,23 +103,6 @@ export default {
     }
   },
 
-  adminCompliance: {
-    title: '部署与运营合规确认',
-    blockingNotice: '继续使用控制台前，须完成部署与运营合规确认。',
-    riskNotice: '本确认用于以清晰、显著、可留痕的方式提示自部署实例的合规义务与运营风险。',
-    version: '协议版本',
-    openDocument: '在 GitHub 查看协议文件',
-    documentSource: '协议正文来自本项目仓库中的 Markdown 文件。修改协议内容时必须同步递增协议版本；已确认的旧版本将失效，控制台使用者须重新确认。',
-    inputLabel: '请逐字输入以下确认短语',
-    inputPlaceholder: '输入确认短语以继续',
-    inputMismatch: '确认短语不匹配，请逐字输入提示内容。',
-    legalNote: '本确认用于明确自部署实例与开源项目、著作权人、贡献者及维护者之间的非关联关系和责任边界；部署、运营或控制相关实例的主体应独立承担其适用义务。',
-    logout: '退出登录',
-    accept: '确认并继续',
-    accepted: '合规确认已记录',
-    acceptFailed: '提交确认失败'
-  },
-
   legal: {
     loadFailed: '文档加载失败',
     retryLater: '请稍后刷新页面重试。',
@@ -128,7 +111,6 @@ export default {
     updatedAt: '更新日期：{date}',
     empty: '暂无正文内容',
     loginAgreement: '登录条款',
-    adminCompliance: '部署与运营合规承诺',
     loginAgreementPrompt: {
       checkboxPrefix: '我已阅读并同意',
       documentSeparator: '、',
@@ -153,6 +135,7 @@ export default {
     dashboard: '仪表盘',
     announcements: '公告',
     apiKeys: 'API 密钥',
+    imageGeneration: '生图',
     batchImage: '批量生图',
     usage: '使用记录',
     redeem: '兑换',
@@ -197,6 +180,96 @@ export default {
     contentModeration: '内容审核',
     promptAudit: '提示词审计',
     auditLogs: '操作日志',
+  },
+
+  // Image generation page
+  images: {
+    // Empty / keys
+    emptyKeysTitle: '还没有可用的 API 密钥',
+    emptyKeysDescription: '生成图片需要一个状态正常的 API 密钥，请先创建或启用一个。',
+    createKey: '创建密钥',
+    manageKeys: '管理密钥',
+    loadKeysFailed: '加载密钥失败',
+    // History / sidebar
+    newChat: '新建对话',
+    clearHistory: '清空历史',
+    history: '历史记录',
+    emptyHistory: '还没有图片记录，输入提示词后会在这里显示。',
+    renameConversation: '重命名会话',
+    processingCount: '处理中 {count}',
+    queuedCount: '排队 {count}',
+    // Empty state
+    startTitle: 'Turn ideas into images',
+    startDescription: '在同一窗口保留本地历史，并从已有结果图继续发起新的编辑。',
+    // Turn meta
+    turnNumber: '第 {count} 轮',
+    modeGenerate: '文生图',
+    modeEdit: '编辑图',
+    reuseConfig: '复用配置',
+    deletePrompt: '删除提示词记录',
+    continueEdit: '加入编辑',
+    countLabel: '{count} 张',
+    resultNumber: '结果 {count}',
+    imageNofM: '图片 {index}/{total}',
+    // Status
+    queued: '排队中',
+    generating: '处理中',
+    generationComplete: '已完成',
+    generationFailed: '生成失败',
+    interrupted: '生成中断，请重试',
+    // Generating placeholder
+    generatingTitle: '正在生成',
+    generatingElapsed: '已用时 {time}',
+    generatingQueued: '正在排队...',
+    generatingRendering: '正在绘制...',
+    generatingFinalizing: '即将完成...',
+    generatingPlaceholder: '生成中',
+    // Actions
+    retryThisImage: '重新生成这一张',
+    regenerateAll: '全部重新生成',
+    deleteResults: '删除生成结果',
+    dismissErrors: '忽略错误',
+    download: '下载',
+    prevImage: '上一张',
+    nextImage: '下一张',
+    // Composer
+    uploadReference: '上传',
+    addReference: '添加参考图',
+    removeReference: '移除参考图',
+    editPlaceholder: '描述你希望如何修改参考图',
+    promptPlaceholder: '输入你想要生成的画面，也可直接粘贴图片',
+    generate: '生成图片',
+    editImage: '编辑图片',
+    addedToEdit: '已加入编辑',
+    readReferenceFailed: '读取参考图失败',
+    noImageData: '未返回图片数据',
+    // Settings panel
+    settingsTitle: '图像设置',
+    apiKey: 'API 密钥',
+    selectKey: '选择密钥',
+    model: '模型',
+    selectModel: '选择模型',
+    loadingModels: '加载模型中...',
+    loadModelsFailed: '加载模型列表失败，已回退到默认模型',
+    qualityLabel: '质量',
+    quality: {
+      auto: '自动',
+      low: '低',
+      medium: '中',
+      high: '高',
+    },
+    sizeLabel: '尺寸',
+    aspectRatio: '宽高比',
+    countSetting: '生成数量',
+    // Confirm dialogs
+    clearHistoryConfirmTitle: '清空全部历史',
+    clearHistoryConfirmDescription: '将删除本地保存的所有生图记录，此操作不可恢复。',
+    deleteConversationConfirmTitle: '删除该对话',
+    deleteConversationConfirmDescription: '将删除该对话的全部记录，此操作不可恢复。',
+    deletePromptConfirmTitle: '删除提示词记录',
+    deletePromptConfirmDescription: '仅隐藏该轮的提示词文本，生成结果会保留。',
+    deleteResultsConfirmTitle: '删除生成结果',
+    deleteResultsConfirmDescription: '仅隐藏该轮的生成结果，提示词会保留。',
   },
 
   // Auth

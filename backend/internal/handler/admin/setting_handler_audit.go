@@ -531,6 +531,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.RiskControlEnabled != after.RiskControlEnabled {
 		changed = append(changed, "risk_control_enabled")
 	}
+	if before.ImageGenerationEnabled != after.ImageGenerationEnabled {
+		changed = append(changed, "image_generation_enabled")
+	}
 	if before.CyberSessionBlockEnabled != after.CyberSessionBlockEnabled {
 		changed = append(changed, "cyber_session_block_enabled")
 	}

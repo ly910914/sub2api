@@ -39,7 +39,7 @@ type AdminHandlers struct {
 	PromptAudit            *securityaudit.PromptAdminHandler
 	Payment                *admin.PaymentHandler
 	Affiliate              *admin.AffiliateHandler
-	Compliance             *admin.ComplianceHandler
+	Billing                *admin.AdminBillingHandler
 	AuditLog               *admin.AuditLogHandler
 }
 

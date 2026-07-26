@@ -30,6 +30,12 @@ export default {
           enabled: 'Enable Available Channels',
           enabledHint: 'When off, the sidebar entry is hidden and the endpoint returns an empty list.',
         },
+		imageGeneration: {
+			title: 'Web Image Generation',
+			description: 'Show logged-in users the in-browser image generation page (text-to-image and image editing). Disabled by default.',
+			enabled: 'Enable Web Image Generation',
+			enabledHint: 'When off, the sidebar entry is hidden and the image page redirects away. The image API for API keys is unaffected.',
+		},
         riskControl: {
           title: 'Risk Control',
           description: 'Enable the content moderation menu and gateway audit entry point. Disabled by default.',

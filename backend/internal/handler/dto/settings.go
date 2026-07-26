@@ -287,7 +287,8 @@ type SystemSettings struct {
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
 
 	// 风控中心功能开关
-	RiskControlEnabled bool `json:"risk_control_enabled"`
+	RiskControlEnabled     bool `json:"risk_control_enabled"`
+	ImageGenerationEnabled bool `json:"image_generation_enabled"`
 
 	// cyber 会话屏蔽开关 + TTL
 	CyberSessionBlockEnabled    bool `json:"cyber_session_block_enabled"`
@@ -371,7 +372,8 @@ type PublicSettings struct {
 
 	AffiliateEnabled bool `json:"affiliate_enabled"`
 
-	RiskControlEnabled bool `json:"risk_control_enabled"`
+	RiskControlEnabled     bool `json:"risk_control_enabled"`
+	ImageGenerationEnabled bool `json:"image_generation_enabled"`
 
 	AllowUserViewErrorRequests bool `json:"allow_user_view_error_requests"`
 }

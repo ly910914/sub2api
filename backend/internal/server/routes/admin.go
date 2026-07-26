@@ -22,11 +22,7 @@ func RegisterAdminRoutes(
 	admin.Use(gin.HandlerFunc(adminAuth))
 	// 审计中间件挂在认证之后：所有管理面变更类操作 + 敏感读取入审计日志
 	admin.Use(gin.HandlerFunc(auditLog))
-	admin.Use(middleware.AdminComplianceGuard(settingService))
 	{
-		// 部署与运营合规确认
-		registerAdminComplianceRoutes(admin, h)
-
 		// 仪表盘
 		registerDashboardRoutes(admin, h)
 
@@ -62,6 +58,9 @@ func RegisterAdminRoutes(
 
 		// 优惠码管理
 		registerPromoCodeRoutes(admin, h)
+
+		// 管理员手工账单
+		registerAdminBillingRoutes(admin, h)
 
 		// 系统设置
 		registerSettingsRoutes(admin, h)
@@ -145,14 +144,6 @@ func registerAuditLogRoutes(admin *gin.RouterGroup, h *handler.Handlers, _ middl
 	}
 }
 
-func registerAdminComplianceRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
-	compliance := admin.Group("/compliance")
-	{
-		compliance.GET("", h.Admin.Compliance.GetStatus)
-		compliance.POST("/accept", h.Admin.Compliance.Accept)
-	}
-}
-
 func registerContentModerationRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 	risk := admin.Group("/risk-control")
 	{
@@ -164,6 +155,19 @@ func registerContentModerationRoutes(admin *gin.RouterGroup, h *handler.Handlers
 		risk.POST("/users/:user_id/unban", h.Admin.ContentModeration.UnbanUser)
 		risk.DELETE("/hashes", h.Admin.ContentModeration.DeleteFlaggedHash)
 		risk.DELETE("/hashes/all", h.Admin.ContentModeration.ClearFlaggedHashes)
+	}
+}
+
+func registerAdminBillingRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	billing := admin.Group("/billing-records")
+	{
+		billing.GET("", h.Admin.Billing.List)
+		billing.POST("", h.Admin.Billing.Create)
+		billing.GET("/stats", h.Admin.Billing.Stats)
+		billing.GET("/suggestions", h.Admin.Billing.Suggestions)
+		billing.GET("/source-suggestions", h.Admin.Billing.SourceSuggestions)
+		billing.PUT("/:id", h.Admin.Billing.Update)
+		billing.DELETE("/:id", h.Admin.Billing.Delete)
 	}
 }
 

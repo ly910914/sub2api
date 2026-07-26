@@ -56,6 +56,12 @@ declare module 'vue-router' {
     requiresRiskControl?: boolean
 
     /**
+     * Whether the in-browser image generation feature is enabled.
+     * @default false
+     */
+    requiresImageGeneration?: boolean
+
+    /**
      * i18n key for the page title
      */
     titleKey?: string
