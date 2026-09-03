@@ -10,7 +10,7 @@ docker run -d \
   -p 8080:8080 \
   -e DATABASE_URL="postgres://user:pass@host:5432/sub2api" \
   -e REDIS_URL="redis://host:6379" \
-  weishaw/sub2api:latest
+  ly910914/sub2api:latest
 ```
 
 ## Docker Compose
@@ -20,7 +20,7 @@ version: '3.8'
 
 services:
   sub2api:
-    image: weishaw/sub2api:latest
+    image: ly910914/sub2api:latest
     ports:
       - "8080:8080"
     environment:
@@ -49,6 +49,20 @@ volumes:
   redis_data:
 ```
 
+## Startup and Database Recovery
+
+Sub2API runs database migrations while starting. PostgreSQL may still be
+recovering briefly after a host or Docker daemon restart. The application
+retries transient PostgreSQL startup and connection errors with bounded
+exponential backoff, then continues startup when the database is ready.
+Permanent errors such as invalid credentials, migration checksum mismatches,
+SQL errors, and incompatible data fail immediately.
+
+The Compose deployment also checks PostgreSQL readiness with both `pg_isready`
+and a simple SQL query. `depends_on: condition: service_healthy` helps order a
+fresh Compose start, but application-level retries are still required when
+Docker restores existing containers after a host restart.
+
 ## Environment Variables
 
 | Variable | Description | Required | Default |
@@ -72,5 +86,5 @@ volumes:
 
 ## Links
 
-- [GitHub Repository](https://github.com/weishaw/sub2api)
-- [Documentation](https://github.com/weishaw/sub2api#readme)
+- [GitHub Repository](https://github.com/ly910914/sub2api)
+- [Documentation](https://github.com/ly910914/sub2api#readme)
