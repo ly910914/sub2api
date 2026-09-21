@@ -79,7 +79,7 @@ describe('images api', () => {
       size: '1024x1024',
       quality: 'high',
       n: 2,
-      response_format: 'url',
+      response_format: 'b64_json',
     })
   })
 
@@ -108,6 +108,7 @@ describe('images api', () => {
     expect(form.get('model')).toBe('gpt-image-2')
     expect(form.get('size')).toBe('1024x1024')
     expect(form.get('quality')).toBe('medium')
+    expect(form.get('response_format')).toBe('b64_json')
     expect(form.get('image')).toBe(file)
   })
 })

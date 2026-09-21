@@ -164,7 +164,7 @@ export async function createImageGeneration(options: ImageGenerationRequest): Pr
     ...(options.size ? { size: options.size } : {}),
     ...(options.quality ? { quality: options.quality } : {}),
     n: Math.max(1, Math.floor(options.n || 1)),
-    response_format: 'url',
+    response_format: 'b64_json',
   }
 
   const response = await fetch(buildGatewayUrl('/v1/images/generations', options.baseUrl), {
@@ -187,7 +187,7 @@ export async function createImageEdit(options: ImageEditRequest): Promise<ImageR
   if (options.size) form.append('size', options.size)
   if (options.quality) form.append('quality', options.quality)
   form.append('n', String(Math.max(1, Math.floor(options.n || 1))))
-  form.append('response_format', 'url')
+  form.append('response_format', 'b64_json')
 
   const response = await fetch(buildGatewayUrl('/v1/images/edits', options.baseUrl), {
     method: 'POST',

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import enAdminAccounts from '../locales/en/admin/accounts'
+import enAdminBilling from '../locales/en/admin/billing'
 import enAdminChannels from '../locales/en/admin/channels'
 import enAdminOps from '../locales/en/admin/ops'
 import enAdminOverview from '../locales/en/admin/overview'
@@ -11,6 +12,7 @@ import enDashboard from '../locales/en/dashboard'
 import enLanding from '../locales/en/landing'
 import enMisc from '../locales/en/misc'
 import zhAdminAccounts from '../locales/zh/admin/accounts'
+import zhAdminBilling from '../locales/zh/admin/billing'
 import zhAdminChannels from '../locales/zh/admin/channels'
 import zhAdminOps from '../locales/zh/admin/ops'
 import zhAdminOverview from '../locales/zh/admin/overview'
@@ -49,6 +51,7 @@ const roots: Record<string, Modules> = {
 const admins: Record<string, Modules> = {
   zh: {
     overview: zhAdminOverview,
+    billing: zhAdminBilling,
     channels: zhAdminChannels,
     accounts: zhAdminAccounts,
     resources: zhAdminResources,
@@ -57,6 +60,7 @@ const admins: Record<string, Modules> = {
   },
   en: {
     overview: enAdminOverview,
+    billing: enAdminBilling,
     channels: enAdminChannels,
     accounts: enAdminAccounts,
     resources: enAdminResources,
@@ -78,5 +82,34 @@ describe.each(Object.keys(roots))('locale %s spread assembly', (locale) => {
 
   it('admin modules have no overlapping top-level keys', () => {
     expect(collisions(admins[locale])).toEqual([])
+  })
+
+  it('keeps the manual billing translation contract complete', () => {
+    const billingModule = admins[locale].billing
+    const billing = billingModule.billing as Record<string, unknown>
+    for (const key of [
+      'title',
+      'description',
+      'createRecord',
+      'editRecord',
+      'deleteRecord',
+      'failedToLoad',
+      'failedToLoadStats',
+      'recordCreated',
+      'recordUpdated',
+      'recordDeleted'
+    ]) {
+      expect(billing[key]).toEqual(expect.any(String))
+    }
+    expect(billing.columns).toEqual(expect.objectContaining({
+      personName: expect.any(String),
+      source: expect.any(String),
+      cost: expect.any(String),
+      profit: expect.any(String),
+      revenue: expect.any(String),
+      occurredAt: expect.any(String),
+      note: expect.any(String),
+      actions: expect.any(String)
+    }))
   })
 })
