@@ -68,7 +68,7 @@ func TestCodexTicketWSHTTPBridgeRechecksEveryTurn(t *testing.T) {
 			defer server.Close()
 			client, _, err := coderws.Dial(ctx, "ws"+strings.TrimPrefix(server.URL, "http"), nil)
 			require.NoError(t, err)
-			defer client.CloseNow()
+			defer func() { _ = client.CloseNow() }()
 			writeTurn := func() {
 				t.Helper()
 				require.NoError(t, client.Write(ctx, coderws.MessageText, []byte(`{"type":"response.create","model":"gpt-6-astra","input":"ping"}`)))
@@ -144,7 +144,7 @@ func TestCodexTicketLegacyPassthroughClosesOnAccountOptIn(t *testing.T) {
 	server, serverErr := startPassthroughHookRecordingServer(t, ctx, svc, account, nil)
 	defer server.Close()
 	client := dialPassthroughLifecycleClient(t, server)
-	defer client.CloseNow()
+	defer func() { _ = client.CloseNow() }()
 	requirePassthroughUpstreamWrite(t, upstream, time.Second)
 	_, err := readPassthroughLifecycleFrame(t, client, 3*time.Second)
 	require.NoError(t, err)

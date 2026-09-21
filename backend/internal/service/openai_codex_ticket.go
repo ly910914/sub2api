@@ -88,19 +88,6 @@ func (s *OpenAIGatewayService) openAICodexTicketConfig() config.OpenAICodexTicke
 	return cfg
 }
 
-func (s *OpenAIGatewayService) openAICodexTicketGatedModel(model string) bool {
-	model = normalizeOpenAICodexTicketModel(model)
-	if model == "" || !s.openAICodexTicketEnabled() {
-		return false
-	}
-	for _, item := range s.openAICodexTicketConfig().Models {
-		if normalizeOpenAICodexTicketModel(item) == model {
-			return true
-		}
-	}
-	return false
-}
-
 // OpenAICodexTicketStatus 是给管理端看的门票摘要，不含 state blob。
 type OpenAICodexTicketStatus struct {
 	Model            string     `json:"model"`
@@ -173,7 +160,8 @@ func validCodexTicketState(state string) bool {
 		return false
 	}
 	for _, c := range state {
-		if !(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '-' || c == '=') {
+		validChar := c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '-' || c == '='
+		if !validChar {
 			return false
 		}
 	}
@@ -519,20 +507,6 @@ func (s *OpenAIGatewayService) refreshOpenAICodexTickets(ctx context.Context) {
 			continue
 		}
 		s.startCodexAccountTicketJob(ctx, account.ID, false)
-	}
-}
-
-// Compatibility helper for tests and internal callers: one bounded, opted-in account job.
-func (s *OpenAIGatewayService) probeOnceOpenAICodexTicket(ctx context.Context, account *Account, model string) {
-	if account == nil || codexAccountTicketConfigOf(account).Model != model {
-		return
-	}
-	job := s.startCodexAccountTicketJob(ctx, account.ID, false)
-	if job != nil {
-		select {
-		case <-job.done:
-		case <-ctx.Done():
-		}
 	}
 }
 

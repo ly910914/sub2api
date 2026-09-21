@@ -16,13 +16,13 @@ import (
 func TestCodexTicketConnectPreservesBufferedTunnelBytes(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 	go func() {
 		conn, err := listener.Accept()
 		if err != nil {
 			return
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 		if _, err := http.ReadRequest(bufio.NewReader(conn)); err != nil {
 			return
 		}
@@ -33,7 +33,7 @@ func TestCodexTicketConnectPreservesBufferedTunnelBytes(t *testing.T) {
 	dialer := &codexTicketHTTPConnectDialer{proxy: u, timeout: time.Second}
 	conn, err := dialer.DialContext(context.Background(), "tcp", "example.com:443")
 	require.NoError(t, err)
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	data := make([]byte, 5)
 	_, err = io.ReadFull(conn, data)
 	require.NoError(t, err)
@@ -43,7 +43,7 @@ func TestCodexTicketConnectPreservesBufferedTunnelBytes(t *testing.T) {
 func TestCodexTicketConnectCancelsStalledProxy(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -51,7 +51,7 @@ func TestCodexTicketConnectCancelsStalledProxy(t *testing.T) {
 		if err != nil {
 			return
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 		_, _ = io.Copy(io.Discard, conn)
 	}()
 	u, err := url.Parse("http://" + listener.Addr().String())
