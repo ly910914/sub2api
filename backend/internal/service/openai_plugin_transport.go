@@ -11,7 +11,7 @@ func (s *OpenAIGatewayService) SetPluginManager(manager *PluginManager) {
 func (s *OpenAIGatewayService) doOpenAIUpstream(request *http.Request, proxyURL string, account *Account) (response *http.Response, err error) {
 	defer func() {
 		if err == nil {
-			s.observeCodexTicketResponse(request, response)
+			s.observeCodexTicketResponse(request, response, account)
 		}
 	}()
 	if s.pluginManager != nil {

@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	apperrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
@@ -25,9 +26,9 @@ import (
 )
 
 const codexAccountTicketConfigKey = "codex_ticket_config"
-const codexTicketMaxAttempts = 8
-const codexTicketRetryCooldown = 5 * time.Minute
-const codexTicketJobTimeout = 8 * time.Minute
+const codexTicketHarvestConcurrency = 2
+const codexTicketRetryCooldown = 3 * time.Minute
+const codexTicketJobTimeout = 5 * time.Minute
 
 var (
 	errCodexTicketModelMismatch     = errors.New("returned model differs from requested model")
@@ -70,28 +71,33 @@ type CodexAccountTicketUpdate struct {
 }
 
 type CodexAccountTicketStatus struct {
-	Watchdog             CodexTicketWatchdogStatus `json:"watchdog"`
-	TicketPlan           string                    `json:"ticket_plan"`
-	TargetLength         int                       `json:"target_length"`
-	Enabled              bool                      `json:"enabled"`
-	GlobalEnabled        bool                      `json:"global_enabled"`
-	Model                string                    `json:"model"`
-	ProxyConfigured      bool                      `json:"proxy_configured"`
-	ProxyDisplay         string                    `json:"proxy_display"`
-	FixedProxyConfigured bool                      `json:"fixed_proxy_configured"`
-	DirectRoute          bool                      `json:"direct_route"`
-	State                string                    `json:"state"`
-	TicketUsable         bool                      `json:"ticket_usable"`
-	Refreshing           bool                      `json:"refreshing"`
-	CapturedAt           *time.Time                `json:"captured_at,omitempty"`
-	RetryAfter           *time.Time                `json:"retry_after,omitempty"`
-	RemainingSeconds     int64                     `json:"remaining_seconds"`
-	ExpiresAt            *time.Time                `json:"expires_at,omitempty"`
-	LastError            string                    `json:"last_error"`
-	Attempts             int                       `json:"attempts"`
+	Egress                 *CodexTicketEgressStatus  `json:"egress,omitempty"`
+	Watchdog               CodexTicketWatchdogStatus `json:"watchdog"`
+	TicketPlan             string                    `json:"ticket_plan"`
+	TargetLength           int                       `json:"target_length"`
+	Enabled                bool                      `json:"enabled"`
+	GlobalEnabled          bool                      `json:"global_enabled"`
+	Model                  string                    `json:"model"`
+	ProxyConfigured        bool                      `json:"proxy_configured"`
+	ProxyDisplay           string                    `json:"proxy_display"`
+	FixedProxyConfigured   bool                      `json:"fixed_proxy_configured"`
+	DirectRoute            bool                      `json:"direct_route"`
+	State                  string                    `json:"state"`
+	TicketUsable           bool                      `json:"ticket_usable"`
+	Refreshing             bool                      `json:"refreshing"`
+	CapturedAt             *time.Time                `json:"captured_at,omitempty"`
+	RetryAfter             *time.Time                `json:"retry_after,omitempty"`
+	RemainingSeconds       int64                     `json:"remaining_seconds"`
+	ExpiresAt              *time.Time                `json:"expires_at,omitempty"`
+	CookieCount            int                       `json:"cookie_count,omitempty"`
+	CookieRemainingSeconds int64                     `json:"cookie_remaining_seconds"`
+	CookieExpiresAt        *time.Time                `json:"cookie_expires_at,omitempty"`
+	LastError              string                    `json:"last_error"`
+	Attempts               int                       `json:"attempts"`
 }
 
 type codexAccountTicketJob struct {
+	egress           *CodexTicketEgressStatus
 	revision         string
 	fixedFingerprint string
 	harvestProxyURL  string // Immutable global pool snapshot for this job; never returned to clients.
@@ -215,17 +221,32 @@ func (s *OpenAIGatewayService) GetCodexAccountTicketStatus(ctx context.Context, 
 		status.State = "global_disabled"
 		return status, nil
 	}
-	if ticket := s.lookupOpenAICodexTicket(account, ac.Model); ticket.validFor(account, ac, time.Now()) {
-		status.State = "ready"
-		status.TicketUsable = true
-		captured := ticket.CapturedAt
-		status.CapturedAt = &captured
-		status.RemainingSeconds = int64(time.Until(ticket.ExpiresAt) / time.Second)
-		expiry := ticket.ExpiresAt
-		status.ExpiresAt = &expiry
+	if ticket := s.lookupOpenAICodexTicket(account, ac.Model); ticket != nil {
+		if cookieExpiry := codexTicketCookiesExpiry(ticket); !cookieExpiry.IsZero() {
+			status.CookieCount = len(ticket.HarvestCookies)
+			status.CookieRemainingSeconds = int64(time.Until(cookieExpiry) / time.Second)
+			if status.CookieRemainingSeconds < 0 {
+				status.CookieRemainingSeconds = 0
+			}
+			cookieExpiry := cookieExpiry
+			status.CookieExpiresAt = &cookieExpiry
+		}
+		if ticket.validFor(account, ac, time.Now()) {
+			status.State = "ready"
+			status.TicketUsable = true
+			captured := ticket.CapturedAt
+			status.CapturedAt = &captured
+			status.RemainingSeconds = int64(time.Until(ticket.ExpiresAt) / time.Second)
+			expiry := ticket.ExpiresAt
+			status.ExpiresAt = &expiry
+		}
 	}
 	s.openaiCodexAccountMu.Lock()
 	if job := s.openaiCodexAccountJobs[id]; job != nil && job.revision == ac.Revision && job.harvestProxyURL == pool && job.fixedFingerprint == codexTicketFixedProxyFingerprint(account) {
+		if job.egress != nil {
+			egress := *job.egress
+			status.Egress = &egress
+		}
 		status.Attempts = job.attempts
 		status.LastError = job.lastError
 		if job.running {
@@ -426,27 +447,58 @@ func (s *OpenAIGatewayService) startCodexAccountTicketJob(ctx context.Context, i
 }
 
 func (s *OpenAIGatewayService) runCodexAccountTicketJob(ctx context.Context, id int64, job *codexAccountTicketJob) {
-	lastError := "Unable to obtain a verified STATE ticket"
-	defer func() {
-		s.openaiCodexAccountMu.Lock()
-		defer s.openaiCodexAccountMu.Unlock()
-		job.running = false
-		job.retryAfter = time.Time{}
-		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-			lastError = "STATE acquisition timed out; acquisition paused for cooldown"
-		} else if ctx.Err() != nil {
-			lastError = ""
-		}
-		if lastError != "" {
-			job.retryAfter = time.Now().Add(codexTicketRetryCooldown)
-		}
-		job.lastError = lastError
-		logger.L().Info("codex_ticket acquisition finished", zap.Int64("account_id", id), zap.Int("attempts", job.attempts), zap.String("reason", lastError))
+	workersCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	egressDone := make(chan struct{})
+	go func() {
+		defer close(egressDone)
+		s.monitorCodexTicketEgress(workersCtx, id, job)
 	}()
+	var verification sync.Mutex
+	results := make(chan string, codexTicketHarvestConcurrency)
+	for range codexTicketHarvestConcurrency {
+		go func() {
+			results <- s.runCodexAccountTicketWorker(workersCtx, cancel, id, job, &verification)
+		}()
+	}
+	lastError := "Unable to obtain a verified STATE ticket"
+	succeeded := false
+	for range codexTicketHarvestConcurrency {
+		reason := <-results
+		if reason == "" {
+			succeeded = true
+		} else if reason != "canceled" && lastError == "Unable to obtain a verified STATE ticket" {
+			lastError = reason
+		}
+		cancel()
+	}
+	<-egressDone
+	s.openaiCodexAccountMu.Lock()
+	defer s.openaiCodexAccountMu.Unlock()
+	job.running = false
+	job.retryAfter = time.Time{}
+	if succeeded {
+		lastError = ""
+	} else if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		lastError = "STATE acquisition timed out; acquisition paused for cooldown"
+	} else if ctx.Err() != nil {
+		lastError = ""
+	}
+	if lastError != "" {
+		job.retryAfter = time.Now().Add(codexTicketRetryCooldown)
+	}
+	job.lastError = lastError
+	logger.L().Info("codex_ticket acquisition finished", zap.Int64("account_id", id), zap.Int("attempts", job.attempts), zap.String("reason", lastError))
+}
+
+// Only verification and publication are serialized; both workers can harvest.
+// Cancel siblings while holding verification after a successful durable save.
+func (s *OpenAIGatewayService) runCodexAccountTicketWorker(ctx context.Context, cancel context.CancelFunc, id int64, job *codexAccountTicketJob, verification *sync.Mutex) (lastError string) {
+	lastError = "canceled"
 	timeout := time.Duration(s.openAICodexTicketConfig().HarvestAttemptTimeoutSeconds) * time.Second
-	for attempt := 1; attempt <= codexTicketMaxAttempts; attempt++ {
+	for {
 		if ctx.Err() != nil || !s.openAICodexTicketEnabledContext(ctx) {
-			return
+			return "canceled"
 		}
 		account, err := s.codexTicketAccountByID(ctx, id)
 		if err != nil {
@@ -457,20 +509,27 @@ func (s *OpenAIGatewayService) runCodexAccountTicketJob(ctx context.Context, id 
 			return
 		}
 		// Token helpers are permitted to update metadata, but not shared account maps.
+		copyAccount := *account
+		account = &copyAccount
 		account.Extra = maps.Clone(account.Extra)
 		account.Credentials = maps.Clone(account.Credentials)
 		s.openaiCodexAccountMu.Lock()
-		job.attempts = attempt
+		job.attempts++
+		attempt := job.attempts
 		s.openaiCodexAccountMu.Unlock()
 		tokenCtx, tokenCancel := context.WithTimeout(ctx, timeout)
 		token, _, err := s.GetAccessToken(tokenCtx, account)
 		tokenCancel()
+		if ctx.Err() != nil {
+			return "canceled"
+		}
 		if err != nil || token == "" {
 			lastError = "Account authentication failed"
 			return
 		}
 		harvestProxy := freshCodexTicketProxyURL(job.harvestProxyURL)
-		state, status, err := s.fireCodexAccountTicketProbe(ctx, account, token, ac.Model, harvestProxy, "", timeout)
+		probe := s.fireCodexAccountTicketProbeWithSession(ctx, account, token, ac.Model, harvestProxy, "", "", nil, timeout)
+		state, status, err := probe.State, probe.Status, probe.Err
 		if reason := codexTicketProbeRejection(status); reason != "" {
 			lastError = reason
 			return
@@ -480,16 +539,24 @@ func (s *OpenAIGatewayService) runCodexAccountTicketJob(ctx context.Context, id 
 		} else if len(state) != codexTicketTargetLength(ac.TicketPlan) {
 			lastError = fmt.Sprintf("STATE length does not match selected %s plan (expected %d, received %d)", ac.TicketPlan, codexTicketTargetLength(ac.TicketPlan), len(state))
 		} else {
+			verification.Lock()
+			// The winning worker cancels before releasing this lock.
 			if ctx.Err() != nil || !s.openAICodexTicketEnabledContext(ctx) || s.openAICodexTicketHarvestProxyURLContext(ctx) != job.harvestProxyURL {
+				verification.Unlock()
+				lastError = "canceled"
 				return
 			}
 			businessProxy, routeValid := codexTicketBusinessProxyURL(account)
 			if !routeValid {
+				verification.Unlock()
 				lastError = "Account business route is incomplete"
 				return
 			}
-			replayState, status, err := s.fireCodexAccountTicketProbe(ctx, account, token, ac.Model, businessProxy, state, timeout)
+			replay := s.fireCodexAccountTicketProbeWithSession(ctx, account, token, ac.Model, businessProxy, state, probe.SessionID, probe.Cookies, timeout)
+			replayState, status, err := replay.State, replay.Status, replay.Err
 			if reason := codexTicketProbeRejection(status); reason != "" {
+				cancel()
+				verification.Unlock()
 				lastError = reason
 				return
 			}
@@ -506,37 +573,42 @@ func (s *OpenAIGatewayService) runCodexAccountTicketJob(ctx context.Context, id 
 							now = through.Add(time.Nanosecond)
 						}
 					}
-					ticket := &openAICodexTicket{AccountID: id, Model: ac.Model, State: state, Length: len(state), CapturedAt: now, ExpiresAt: now.Add(time.Hour), Attempts: attempt, Verified: true, ConfigRevision: job.revision, FixedProxyFingerprint: job.fixedFingerprint}
+					cookies := mergeCodexTicketCookies(probe.Cookies, replay.Cookies)
+					ticket := &openAICodexTicket{AccountID: id, Model: ac.Model, State: state, Length: len(state), CapturedAt: now, ExpiresAt: now.Add(time.Hour), Attempts: job.attempts, Verified: true, ConfigRevision: job.revision, FixedProxyFingerprint: job.fixedFingerprint, HarvestSessionID: probe.SessionID, HarvestCookies: cookies, HarvestCookiesAt: now}
 					s.storeOpenAICodexTicket(ctx, live, ticket)
 					if got := s.lookupOpenAICodexTicket(live, ac.Model); got != nil && got.CapturedAt.Equal(now) {
 						lastError = ""
+						cancel()
 					} else {
 						lastError = "Could not save verified STATE"
 					}
 				}
 				s.openaiCodexAccountMu.Unlock()
+				cancel()
+				verification.Unlock()
 				return
 			}
+			verification.Unlock()
 			if err != nil || status != http.StatusOK {
 				lastError = "Business-route verification: " + codexTicketProbeFailure(status, err)
 			} else {
 				lastError = "Business-route verification returned the invalidation signal (312-byte STATE)"
 			}
 		}
-		// Publish each failure while the next attempt runs, instead of leaving
-		// the panel silent until all eight attempts finish. Only safe summaries.
+		if ctx.Err() != nil {
+			return "canceled"
+		}
+		// Publish safe progress summaries while both workers continue retrying.
 		s.openaiCodexAccountMu.Lock()
 		job.lastError = lastError
 		s.openaiCodexAccountMu.Unlock()
 		logger.L().Info("codex_ticket acquisition attempt failed", zap.Int64("account_id", id), zap.Int("attempt", attempt), zap.String("reason", lastError))
-		if attempt < codexTicketMaxAttempts {
-			timer := time.NewTimer(time.Second)
-			select {
-			case <-ctx.Done():
-				timer.Stop()
-				return
-			case <-timer.C:
-			}
+		timer := time.NewTimer(time.Second)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return "canceled"
+		case <-timer.C:
 		}
 	}
 }
@@ -562,15 +634,12 @@ func codexTicketProbeFailure(status int, err error) string {
 	}
 }
 
-// Account authentication, access and rate-limit rejections end the entire round.
-// Rotating harvest exits cannot resolve these reliably; retain any still-valid
-// ticket and use the existing failure cooldown instead of spending more probes.
+// Authentication and rate-limit rejections end the round. HTTP 403 is retried
+// within the existing round deadline, like other unsuccessful probes.
 func codexTicketProbeRejection(status int) string {
 	switch status {
 	case http.StatusUnauthorized:
 		return "Upstream rejected authentication (HTTP 401); acquisition paused for cooldown"
-	case http.StatusForbidden:
-		return "Upstream denied access (HTTP 403); acquisition paused for cooldown"
 	case http.StatusTooManyRequests:
 		return "Upstream rate limit (HTTP 429); acquisition paused for cooldown"
 	default:

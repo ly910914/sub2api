@@ -51,7 +51,9 @@ func ProvideAdminHandlers(
 	ollamaCloudUsage *service.OllamaCloudUsageService,
 	settingService *service.SettingService,
 	codexTicketGateway *service.OpenAIGatewayService,
+	warmupService *service.OpenAIAccountWarmupService,
 ) *AdminHandlers {
+	accountHandler.SetWarmupService(warmupService)
 	accountHandler.SetUpstreamBillingProbeService(upstreamBillingProbe)
 	accountHandler.SetOllamaCloudUsageService(ollamaCloudUsage)
 	accountHandler.SetCodexTicketSettings(settingService)

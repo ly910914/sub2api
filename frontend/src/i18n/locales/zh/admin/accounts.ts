@@ -1,6 +1,21 @@
 export default {
     accounts: {
+      warmup: {
+        title: '帐号预热', enabled: '开启帐号预热', model: '预热模型', models: '预热模型会话', addModel: '添加模型', removeModel: '移除模型',
+        concurrency: '并发会话数', threshold: '成功请求次数阈值', prompt: '每轮提示词',
+        modelHint: '每个模型占一个固定会话槽位；例如 Sol + Astra、并发 2 会同时各跑一条。',
+        contextHint: '同一会话会继续携带历史上下文，并固定使用同一个 prompt_cache_key。',
+        bulkApply: '应用预热配置', retry: '重试', reset: '重新预热',
+        resetConfirm: '确定清零预热进度及会话历史？预热开启时，完成前将限制正常调度。',
+        configResetConfirm: '修改模型、并发或提示词将清零预热进度及会话历史，确定保存？',
+        operationFailed: '预热操作失败',
+        states: { disabled: '预热已关闭', pending: '等待预热', running: '预热中', cooling: '预热冷却中', failed: '预热失败', completed: '预热已完成' }
+      },
       stateTicket: {
+  "egressLabel": "代理出口检测：",
+  "egressChecking": "检测中",
+  "egressFailed": "检测失败",
+  "egressHint": "独立连接检测结果；动态池可能逐连接换 IP，不代表每次打票的精确出口。",
   "title": "STATE 票据",
   "description": "仅为此账号开启。默认关闭，其他账号不受影响。",
   "enable": "启用此账号的 STATE 票据",
@@ -24,6 +39,10 @@ export default {
   "savedTicket": "已保存票据",
   "capturedAt": "获取时间：{time}",
   "expiresAt": "到期时间：{time}",
+	"cookieCount": "会话 Cookie：{count} 个",
+	"cookieFresh": "剩余 {time}",
+	"cookieExpired": "已过期",
+	"cookieExpiresAt": "Cookie 窗口截止：{time}",
   "savedTicketHint": "服务重启后票据仍会保留，无需复制原票据；这里只显示时间，不会泄露票据内容。",
   "refreshing": "正在续期，当前票据仍可用，剩余 {time}",
   "refreshFailedUsable": "本次续期失败，继续使用当前票据至到期。",

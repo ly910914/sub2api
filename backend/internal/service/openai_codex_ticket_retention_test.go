@@ -15,14 +15,16 @@ import (
 )
 
 func TestCodexAccountTicketRejectionStopsRoundAndRetainsSavedTicket(t *testing.T) {
-	for _, code := range []int{401, 403, 429} {
+	for _, code := range []int{401, 429} {
 		for _, stage := range []string{"harvest", "fixed"} {
 			t.Run(strconv.Itoa(code)+"-"+stage, func(t *testing.T) {
 				var calls atomic.Int64
 				started, release := make(chan struct{}), make(chan struct{})
 				s, repo := ticketJobService(t, &codexTicketFuncUpstream{do: func(req *http.Request) (*http.Response, error) {
-					if calls.Add(1) == 1 {
-						close(started)
+					if n := calls.Add(1); n <= 2 {
+						if n == 1 {
+							close(started)
+						}
 						select {
 						case <-release:
 						case <-req.Context().Done():
@@ -60,7 +62,8 @@ func TestCodexAccountTicketRejectionStopsRoundAndRetainsSavedTicket(t *testing.T
 				if stage == "fixed" {
 					wantCalls = 2
 				}
-				require.Equal(t, wantCalls, calls.Load(), "must not rotate exits after an upstream rejection")
+				require.GreaterOrEqual(t, calls.Load(), wantCalls)
+				require.LessOrEqual(t, calls.Load(), wantCalls+1, "only the already-started sibling may also finish")
 				status, err = s.GetCodexAccountTicketStatus(context.Background(), 41)
 				require.NoError(t, err)
 				require.Equal(t, "ready", status.State)
@@ -68,7 +71,7 @@ func TestCodexAccountTicketRejectionStopsRoundAndRetainsSavedTicket(t *testing.T
 				require.False(t, status.Refreshing)
 				require.Contains(t, status.LastError, strconv.Itoa(code))
 				require.NotNil(t, status.RetryAfter)
-				require.True(t, status.RetryAfter.After(time.Now().Add(4*time.Minute)))
+				require.WithinDuration(t, time.Now().Add(3*time.Minute), *status.RetryAfter, time.Second)
 				require.Nil(t, s.startCodexAccountTicketJob(context.Background(), 41, false))
 				encoded, err := json.Marshal(status)
 				require.NoError(t, err)

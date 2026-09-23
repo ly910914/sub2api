@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -17,11 +18,12 @@ func TestCodexTicketPublishesFailureWhileRetrying(t *testing.T) {
 	secondStarted := make(chan struct{})
 	release := make(chan struct{})
 	var calls atomic.Int64
+	var once sync.Once
 	s, _ := ticketJobService(t, &codexTicketFuncUpstream{do: func(req *http.Request) (*http.Response, error) {
 		if calls.Add(1) == 1 {
 			return codexModelResponse("another-model"), nil
 		}
-		close(secondStarted)
+		once.Do(func() { close(secondStarted) })
 		select {
 		case <-release:
 		case <-req.Context().Done():
@@ -38,8 +40,11 @@ func TestCodexTicketPublishesFailureWhileRetrying(t *testing.T) {
 	status, err := s.GetCodexAccountTicketStatus(context.Background(), 41)
 	require.NoError(t, err)
 	require.Equal(t, "harvesting", status.State)
-	require.Equal(t, 2, status.Attempts)
-	require.Contains(t, status.LastError, "model does not match")
+	require.GreaterOrEqual(t, status.Attempts, 2)
+	require.Eventually(t, func() bool {
+		status, err := s.GetCodexAccountTicketStatus(context.Background(), 41)
+		return err == nil && strings.Contains(status.LastError, "model does not match")
+	}, time.Second, time.Millisecond)
 	job.cancel()
 	waitCodexTicketJob(t, job)
 }

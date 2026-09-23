@@ -10,6 +10,7 @@ export interface CodexAccountTicketWatchdog {
 }
 
 export interface CodexAccountTicketStatus {
+  egress?: { state: 'ready' | 'error'; ip?: string; country?: string; checked_at: string }
   enabled: boolean
   global_enabled: boolean
   model: string
@@ -25,6 +26,11 @@ export interface CodexAccountTicketStatus {
   ticket_usable?: boolean
   captured_at?: string
   expires_at?: string
+	// Cookie values are never returned. These summaries describe the independent
+	// 240-second injection window bound to the saved ticket.
+  cookie_count?: number
+  cookie_remaining_seconds?: number
+  cookie_expires_at?: string
   refreshing?: boolean
   retry_after?: string
   last_error: string

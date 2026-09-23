@@ -32,12 +32,27 @@
         <span :data-testid="refreshingUsable ? 'codex-account-ticket-refreshing-usable' : undefined" :class="status.state === 'ready' || refreshingUsable ? 'text-emerald-600 dark:text-emerald-400' : status.state === 'error' ? 'text-amber-700 dark:text-amber-300' : 'text-gray-600 dark:text-gray-300'">{{ stateLabel }}</span>
         <span v-if="status.state === 'harvesting' && status.attempts" class="text-xs text-gray-500">{{ t('admin.accounts.stateTicket.attempts', { count: status.attempts }) }}</span>
       </div>
+      <div v-if="status.egress || status.state === 'harvesting'" class="min-w-0 space-y-1 break-words text-xs text-gray-500 dark:text-gray-400" aria-live="polite" data-testid="codex-account-ticket-egress">
+        <p class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span>{{ t('admin.accounts.stateTicket.egressLabel') }}</span>
+          <span v-if="status.egress?.state === 'ready'" class="min-w-0 break-all font-mono text-gray-800 dark:text-gray-200" data-testid="codex-account-ticket-egress-ip">{{ status.egress.ip }}</span>
+          <span v-else>{{ t(status.egress?.state === 'error' ? 'admin.accounts.stateTicket.egressFailed' : 'admin.accounts.stateTicket.egressChecking') }}</span>
+          <span v-if="status.egress?.state === 'ready' && status.egress.country">{{ status.egress.country }}</span>
+          <span v-if="status.egress?.checked_at">{{ formatLocalDate(status.egress.checked_at) }}</span>
+        </p>
+        <p>{{ t('admin.accounts.stateTicket.egressHint') }}</p>
+      </div>
       <div v-if="savedTicket" class="space-y-1 rounded bg-emerald-50 p-2 text-xs text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-200" data-testid="codex-account-ticket-saved-ticket">
         <p class="font-medium">{{ t('admin.accounts.stateTicket.savedTicket') }}</p>
         <p v-if="capturedAt || expiresAt" class="flex flex-wrap gap-x-3 gap-y-1">
           <span v-if="capturedAt">{{ t('admin.accounts.stateTicket.capturedAt', { time: capturedAt }) }}</span>
           <span v-if="expiresAt">{{ t('admin.accounts.stateTicket.expiresAt', { time: expiresAt }) }}</span>
         </p>
+		<p v-if="status.cookie_count" class="flex flex-wrap gap-x-2 gap-y-1" data-testid="codex-account-ticket-cookies">
+		  <span>{{ t('admin.accounts.stateTicket.cookieCount', { count: status.cookie_count }) }}</span>
+		  <span :class="cookieFresh ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-500 dark:text-gray-400'">{{ cookieFresh ? t('admin.accounts.stateTicket.cookieFresh', { time: cookieRemainingTime }) : t('admin.accounts.stateTicket.cookieExpired') }}</span>
+		  <span v-if="cookieExpiresAt">{{ t('admin.accounts.stateTicket.cookieExpiresAt', { time: cookieExpiresAt }) }}</span>
+		</p>
         <p data-testid="codex-account-ticket-saved-ticket-hint">{{ t('admin.accounts.stateTicket.savedTicketHint') }}</p>
       </div>
       <p v-if="usableAfterRefreshFailure" class="text-xs text-amber-700 dark:text-amber-300" data-testid="codex-account-ticket-usable-error">
@@ -103,6 +118,9 @@ const usableAfterRefreshFailure = computed(() => hasUsableTicket.value && !!stat
 const remainingTime = computed(() => formatRemaining(status.value?.remaining_seconds ?? 0))
 const capturedAt = computed(() => formatLocalDate(status.value?.captured_at))
 const expiresAt = computed(() => formatLocalDate(status.value?.expires_at))
+const cookieExpiresAt = computed(() => formatLocalDate(status.value?.cookie_expires_at))
+const cookieFresh = computed(() => (status.value?.cookie_remaining_seconds ?? 0) > 0)
+const cookieRemainingTime = computed(() => formatRemaining(status.value?.cookie_remaining_seconds ?? 0))
 const retryAfter = computed(() => formatLocalDate(status.value?.retry_after))
 const stateLabel = computed(() => {
   if (!status.value) return ''

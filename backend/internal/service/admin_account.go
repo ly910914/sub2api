@@ -98,6 +98,7 @@ func cloneAccountJSONMap(value map[string]any) (map[string]any, error) {
 }
 
 var duplicateAccountDiscardedExtraKeys = map[string]struct{}{
+	OpenAIWarmupStateKey: {},
 	// A retry identity belongs to the operation that created one copy, not to later copies.
 	duplicateAccountOperationIDExtraKey: {},
 	// External sync identity belongs to one local account only.
@@ -528,6 +529,9 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 	if err != nil {
 		return nil, err
 	}
+	if err := ValidateOpenAIWarmup(account); err != nil {
+		return nil, err
+	}
 	if err := s.ValidateAccountGroupBindings(ctx, groupIDs); err != nil {
 		return nil, err
 	}
@@ -658,6 +662,11 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 	requestedProbeEnabledUpdate := input.ProbeEnabled
 	requestedRateSyncEnabledUpdate := input.RateSyncEnabled
 	if input.Extra != nil {
+		if _, present := normalizedExtra[OpenAIWarmupConfigKey]; !present {
+			if cfg, exists := account.Extra[OpenAIWarmupConfigKey]; exists {
+				normalizedExtra[OpenAIWarmupConfigKey] = cfg
+			}
+		}
 		requestedProbeEnabled, hasRequestedProbeEnabled := normalizedExtra[UpstreamBillingProbeEnabledExtraKey]
 		if hasRequestedProbeEnabled {
 			enabled, ok := requestedProbeEnabled.(bool)
@@ -840,6 +849,9 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 	}
 
 	billingSettingsAppliedAtomically := false
+	if err := ValidateOpenAIWarmup(account); err != nil {
+		return nil, err
+	}
 	updater := s.accountBillingRepo
 	if updater == nil {
 		// Unit tests and narrow internal callers may construct adminServiceImpl
@@ -904,6 +916,18 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 // UpdateAccountExtra 仅对 Extra JSONB 做 key 级合并，避免覆盖其它运行态键
 // （如 model_rate_limits / passive_usage_* 等）。
 func (s *adminServiceImpl) UpdateAccountExtra(ctx context.Context, id int64, updates map[string]any) error {
+	if _, exists := updates[OpenAIWarmupConfigKey]; exists {
+		account, err := s.accountRepo.GetByID(ctx, id)
+		if err != nil {
+			return err
+		}
+		account.Extra = cloneWarmupExtra(account.Extra)
+		account.Extra[OpenAIWarmupConfigKey] = updates[OpenAIWarmupConfigKey]
+		if err := ValidateOpenAIWarmup(account); err != nil {
+			return err
+		}
+	}
+	delete(updates, OpenAIWarmupStateKey)
 	updates = MergeOpenAICodexTicketExtra(updates, nil)
 	updates = sanitizedCodexFingerprintExtraUpdates(updates)
 	updates = stripOpenAIAutoResetCreditManagedExtra(updates, true)
@@ -1143,6 +1167,25 @@ func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUp
 	}
 
 	// Run bulk update for column/jsonb fields first.
+	if _, warmupEdit := input.Extra[OpenAIWarmupConfigKey]; warmupEdit || input.Concurrency != nil {
+		accounts, err := s.accountRepo.GetByIDs(ctx, input.AccountIDs)
+		if err != nil {
+			return nil, err
+		}
+		for _, account := range accounts {
+			copy := *account
+			copy.Extra = cloneWarmupExtra(account.Extra)
+			if warmupEdit {
+				copy.Extra[OpenAIWarmupConfigKey] = input.Extra[OpenAIWarmupConfigKey]
+			}
+			if input.Concurrency != nil {
+				copy.Concurrency = *input.Concurrency
+			}
+			if err := ValidateOpenAIWarmup(&copy); err != nil {
+				return nil, err
+			}
+		}
+	}
 	if _, err := s.accountRepo.BulkUpdate(ctx, input.AccountIDs, repoUpdates); err != nil {
 		return nil, err
 	}

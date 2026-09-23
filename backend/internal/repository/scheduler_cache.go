@@ -977,6 +977,8 @@ func filterSchedulerExtra(extra map[string]any) map[string]any {
 		// Anthropic shared-window and Fable-only threshold checks run on this
 		// projection. UpdateExtra refreshes both payloads without a bucket rebuild.
 		"session_window_utilization",
+		service.OpenAIWarmupConfigKey,
+		service.OpenAIWarmupStateKey,
 		"passive_usage_7d_utilization",
 		"passive_usage_7d_reset",
 		"passive_usage_7d_oi_utilization",
@@ -1043,6 +1045,18 @@ func filterSchedulerExtra(extra map[string]any) map[string]any {
 					continue
 				}
 				value = filteredProbe
+			}
+			if key == service.OpenAIWarmupConfigKey || key == service.OpenAIWarmupStateKey {
+				var source map[string]any
+				raw, _ := json.Marshal(value)
+				_ = json.Unmarshal(raw, &source)
+				projection := make(map[string]any)
+				for _, field := range []string{"enabled", "success_threshold", "status", "success_count"} {
+					if v, exists := source[field]; exists {
+						projection[field] = v
+					}
+				}
+				value = projection
 			}
 			filtered[key] = value
 		}

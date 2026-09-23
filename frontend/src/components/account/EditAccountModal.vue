@@ -1658,6 +1658,9 @@
         :proxy-changed="form.proxy_id !== account.proxy_id"
       />
 
+      <AccountWarmupFields v-if="account.platform === 'openai' && account.type === 'oauth' && !isSparkShadow"
+        v-model="warmup" :max-concurrency="form.concurrency" :account-id="account.id" :visible="show" />
+
       <UpstreamRequestIdHeaderField
         v-model="upstreamRequestIdHeader"
         :platform="account.platform"
@@ -3050,6 +3053,8 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Select from '@/components/common/Select.vue'
 import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import UpstreamRequestIdHeaderField from '@/components/account/UpstreamRequestIdHeaderField.vue'
+import AccountWarmupFields from '@/components/account/AccountWarmupFields.vue'
+import { readAccountWarmup } from '@/components/account/accountWarmup'
 import Toggle from '@/components/common/Toggle.vue'
 import Icon from '@/components/icons/Icon.vue'
 import ProxySelector from '@/components/common/ProxySelector.vue'
@@ -3461,6 +3466,7 @@ const upstreamBillingRateSyncEnabled = ref(false)
 const mixedScheduling = ref(false) // For antigravity accounts: enable mixed scheduling
 // 上游ID：直接上游声明请求标识的响应头名，留空不记录。
 const upstreamRequestIdHeader = ref('')
+const warmup = ref(readAccountWarmup())
 const readUpstreamRequestIdHeader = (extra: unknown): string => {
   const value = (extra as Record<string, unknown> | undefined)?.upstream_request_id_header
   return typeof value === 'string' ? value : ''
@@ -3989,6 +3995,7 @@ const syncFormFromAccount = (newAccount: Account | null) => {
   mixedScheduling.value = false
   allowOverages.value = false
 	const extra = newAccount.extra as Record<string, unknown> | undefined
+  warmup.value = readAccountWarmup(extra)
 	mixedScheduling.value = extra?.mixed_scheduling === true
 	allowOverages.value = extra?.allow_overages === true
 	upstreamRequestIdHeader.value = readUpstreamRequestIdHeader(extra)
@@ -4938,6 +4945,16 @@ const persistGrokMediaEligibility = async (accountID: number, updatedAccount: Ac
 }
 
 const submitUpdateAccount = async (accountID: number, updatePayload: Record<string, unknown>) => {
+  if (props.account?.platform === 'openai' && props.account.type === 'oauth' && !isSparkShadow.value) {
+    const original = readAccountWarmup(props.account.extra)
+    const modelsChanged = original.models.length !== warmup.value.models.length
+      || original.models.some((model, index) => model !== warmup.value.models[index])
+    if ((modelsChanged || original.concurrency !== warmup.value.concurrency || original.prompt !== warmup.value.prompt) && original.enabled
+      && !window.confirm(t('admin.accounts.warmup.configResetConfirm'))) return
+    if (warmup.value.enabled || props.account.extra?.openai_warmup) {
+      updatePayload.extra = { ...((updatePayload.extra ?? props.account.extra ?? {}) as Record<string, unknown>), openai_warmup: { ...warmup.value } }
+    }
+  }
   submitting.value = true
   try {
     let updatedAccount = await adminAPI.accounts.update(accountID, withAntigravityConfirmFlag(updatePayload))

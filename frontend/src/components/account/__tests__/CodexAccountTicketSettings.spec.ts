@@ -21,6 +21,26 @@ function mountCard() {
 }
 
 describe('CodexAccountTicketSettings', () => {
+  it('updates the sampled egress independently of ticket acquisition', async () => {
+    api.getCodexAccountTicket.mockResolvedValue(makeStatus({ enabled: true, state: 'harvesting' }))
+    const wrapper = mountCard()
+    await flushPromises()
+    expect(wrapper.get(selector('egress')).text()).toContain('egressChecking')
+    api.getCodexAccountTicket.mockResolvedValue(makeStatus({ enabled: true, state: 'harvesting', egress: { state: 'ready', ip: '2001:db8::1234', country: 'GB', checked_at: '2026-09-21T12:00:00Z' } }))
+    await vi.advanceTimersByTimeAsync(3000)
+    await flushPromises()
+    expect(wrapper.get(selector('egress-ip')).text()).toBe('2001:db8::1234')
+    expect(wrapper.get(selector('egress')).text()).toContain('GB')
+    expect(wrapper.get(selector('egress')).text()).toContain('egressHint')
+    api.getCodexAccountTicket.mockResolvedValue(makeStatus({ enabled: true, state: 'harvesting', egress: { state: 'error', checked_at: '2026-09-21T12:00:30Z' } }))
+    await vi.advanceTimersByTimeAsync(3000)
+    await flushPromises()
+    expect(wrapper.find(selector('egress-ip')).exists()).toBe(false)
+    expect(wrapper.get(selector('egress')).text()).toContain('egressFailed')
+    expect(wrapper.get(selector('status')).text()).toContain('states.harvesting')
+    expect(api.harvestCodexAccountTicket).not.toHaveBeenCalled()
+  })
+
   beforeEach(() => {
     vi.useFakeTimers()
     vi.resetAllMocks()
@@ -240,6 +260,47 @@ describe('CodexAccountTicketSettings', () => {
     expect(wrapper.get(selector('saved-ticket')).text()).toContain(new Date(capturedAt).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }))
     expect(wrapper.get(selector('saved-ticket')).text()).toContain(new Date(expiresAt).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }))
     expect(wrapper.get(selector('saved-ticket-hint')).text()).toContain('stateTicket.savedTicketHint')
+  })
+
+  it('shows only cookie freshness metadata for a saved ticket', async () => {
+    const expiresAt = '2026-09-18T12:04:00Z'
+    api.getCodexAccountTicket.mockResolvedValue(makeStatus({
+      enabled: true,
+      proxy_configured: true,
+      state: 'ready',
+      ticket_usable: true,
+      captured_at: '2026-09-18T12:00:00Z',
+      expires_at: '2026-09-18T13:00:00Z',
+      cookie_count: 2,
+      cookie_remaining_seconds: 120,
+      cookie_expires_at: expiresAt
+    }))
+    const wrapper = mountCard()
+    await flushPromises()
+    const cookies = wrapper.get(selector('cookies')).text()
+    expect(cookies).toContain('cookieCount')
+    expect(cookies).toContain('cookieFresh')
+    expect(cookies).toContain('2m 00s')
+    expect(cookies).toContain(new Date(expiresAt).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }))
+    expect(cookies).not.toContain('edge=')
+  })
+
+  it('marks stored cookies expired without hiding the saved ticket', async () => {
+    api.getCodexAccountTicket.mockResolvedValue(makeStatus({
+      enabled: true,
+      proxy_configured: true,
+      state: 'ready',
+      ticket_usable: true,
+      captured_at: '2026-09-18T12:00:00Z',
+      expires_at: '2026-09-18T13:00:00Z',
+      cookie_count: 1,
+      cookie_remaining_seconds: 0,
+      cookie_expires_at: '2026-09-18T12:04:00Z'
+    }))
+    const wrapper = mountCard()
+    await flushPromises()
+    expect(wrapper.get(selector('cookies')).text()).toContain('cookieExpired')
+    expect(wrapper.get(selector('saved-ticket')).exists()).toBe(true)
   })
 
   it('reports a renewal failure while continuing to use the saved ticket', async () => {

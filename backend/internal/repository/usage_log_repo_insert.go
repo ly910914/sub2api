@@ -1261,6 +1261,12 @@ func prepareUsageLogInsert(log *service.UsageLog) usageLogInsertPrepared {
 	rateMultiplier := log.RateMultiplier
 	log.SyncRequestTypeAndLegacyFields()
 	requestType := int16(log.RequestType)
+	userIDArg := any(log.UserID)
+	apiKeyIDArg := any(log.APIKeyID)
+	if log.EffectiveRequestType() == service.RequestTypeWarmup {
+		userIDArg = nil
+		apiKeyIDArg = nil
+	}
 
 	groupID := nullInt64(log.GroupID)
 	subscriptionID := nullInt64(log.SubscriptionID)
@@ -1305,8 +1311,8 @@ func prepareUsageLogInsert(log *service.UsageLog) usageLogInsertPrepared {
 		rateMultiplier: rateMultiplier,
 		requestType:    requestType,
 		args: []any{
-			log.UserID,
-			log.APIKeyID,
+			userIDArg,
+			apiKeyIDArg,
 			log.AccountID,
 			requestIDArg,
 			log.Model,

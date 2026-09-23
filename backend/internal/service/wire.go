@@ -27,6 +27,14 @@ func ProvideGrokOAuthService(proxyRepo ProxyRepository, oauthClient GrokOAuthCli
 }
 
 // BuildInfo contains build information
+func ProvideOpenAIAccountWarmupService(repo OpenAIWarmupRepository, accounts AccountRepository, executor *AccountTestService, concurrency *ConcurrencyService, usageLogs UsageLogRepository) *OpenAIAccountWarmupService {
+	svc := NewOpenAIAccountWarmupService(repo, accounts, executor, concurrency)
+	svc.SetUsageLogRepository(usageLogs)
+	svc.Start()
+	return svc
+}
+
+// BuildInfo contains build information
 type BuildInfo struct {
 	Version   string
 	BuildType string
@@ -886,6 +894,7 @@ var ProviderSet = wire.NewSet(
 	ProvideRateLimitService,
 	ProvideAccountUsageService,
 	ProvideAccountTestService,
+	ProvideOpenAIAccountWarmupService,
 	ProvideUpstreamBillingProbeService,
 	ProvideOllamaCloudUsageService,
 	ProvideSettingService,

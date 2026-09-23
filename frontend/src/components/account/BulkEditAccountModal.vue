@@ -32,6 +32,15 @@
       </div>
 
       <!-- OpenAI passthrough -->
+      <div v-if="allOpenAIOAuthOnly" class="space-y-3">
+        <label class="flex items-center gap-2 text-sm">
+          <input v-model="enableAccountWarmup" type="checkbox" class="rounded border-gray-300" />
+          {{ t('admin.accounts.warmup.bulkApply') }}
+        </label>
+        <AccountWarmupFields v-if="enableAccountWarmup" v-model="accountWarmup" />
+      </div>
+
+      <!-- OpenAI passthrough -->
       <div
         v-if="allOpenAIPassthroughCapable"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -1473,6 +1482,8 @@
 </template>
 
 <script setup lang="ts">
+import AccountWarmupFields from '@/components/account/AccountWarmupFields.vue'
+import { readAccountWarmup } from '@/components/account/accountWarmup'
 import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
@@ -1649,6 +1660,8 @@ const enableBaseUrl = ref(false)
 const enableModelRestriction = ref(false)
 const enableCustomErrorCodes = ref(false)
 const enableInterceptWarmup = ref(false)
+const enableAccountWarmup = ref(false)
+const accountWarmup = ref(readAccountWarmup())
 const enableHeaderOverride = ref(false)
 const enableProxy = ref(false)
 const enableConcurrency = ref(false)
@@ -1936,6 +1949,9 @@ const buildUpdatePayload = (): Record<string, unknown> | null => {
     }
     return updates.extra as Record<string, unknown>
   }
+  if (enableAccountWarmup.value && allOpenAIOAuthOnly.value) {
+    ensureExtra().openai_warmup = { ...accountWarmup.value }
+  }
 
   if (enableProxy.value) {
     // 后端期望 proxy_id: 0 表示清除代理，而不是 null
@@ -2210,6 +2226,7 @@ const handleSubmit = async () => {
     enableModelRestriction.value ||
     enableCustomErrorCodes.value ||
     enableInterceptWarmup.value ||
+    (enableAccountWarmup.value && allOpenAIOAuthOnly.value) ||
     enableHeaderOverride.value ||
     enableProxy.value ||
     enableConcurrency.value ||
@@ -2356,6 +2373,8 @@ watch(
       enableModelRestriction.value = false
       enableCustomErrorCodes.value = false
       enableInterceptWarmup.value = false
+      enableAccountWarmup.value = false
+      accountWarmup.value = readAccountWarmup()
       enableHeaderOverride.value = false
       enableProxy.value = false
       enableConcurrency.value = false

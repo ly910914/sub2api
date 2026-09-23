@@ -48,6 +48,7 @@ func NewOAuthHandler(oauthService *service.OAuthService) *OAuthHandler {
 
 // AccountHandler handles admin account management
 type AccountHandler struct {
+	warmupService           *service.OpenAIAccountWarmupService
 	adminService            service.AdminService
 	oauthService            *service.OAuthService
 	openaiOAuthService      *service.OpenAIOAuthService
@@ -121,63 +122,66 @@ func NewAccountHandler(
 
 // CreateAccountRequest represents create account request
 type CreateAccountRequest struct {
-	Name                    string         `json:"name" binding:"required"`
-	Notes                   *string        `json:"notes"`
-	Platform                string         `json:"platform" binding:"required"`
-	Type                    string         `json:"type" binding:"required,oneof=oauth setup-token apikey upstream bedrock service_account"`
-	Credentials             map[string]any `json:"credentials" binding:"required"`
-	Extra                   map[string]any `json:"extra"`
-	ProxyID                 *int64         `json:"proxy_id"`
-	Concurrency             int            `json:"concurrency"`
-	Priority                int            `json:"priority"`
-	RateMultiplier          *float64       `json:"rate_multiplier"`
-	LoadFactor              *int           `json:"load_factor"`
-	GroupIDs                []int64        `json:"group_ids"`
-	ExpiresAt               *int64         `json:"expires_at"`
-	AutoPauseOnExpired      *bool          `json:"auto_pause_on_expired"`
-	ProbeEnabled            *bool          `json:"upstream_billing_probe_enabled"`
-	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
+	Warmup                  *service.OpenAIWarmupConfig `json:"warmup"`
+	Name                    string                      `json:"name" binding:"required"`
+	Notes                   *string                     `json:"notes"`
+	Platform                string                      `json:"platform" binding:"required"`
+	Type                    string                      `json:"type" binding:"required,oneof=oauth setup-token apikey upstream bedrock service_account"`
+	Credentials             map[string]any              `json:"credentials" binding:"required"`
+	Extra                   map[string]any              `json:"extra"`
+	ProxyID                 *int64                      `json:"proxy_id"`
+	Concurrency             int                         `json:"concurrency"`
+	Priority                int                         `json:"priority"`
+	RateMultiplier          *float64                    `json:"rate_multiplier"`
+	LoadFactor              *int                        `json:"load_factor"`
+	GroupIDs                []int64                     `json:"group_ids"`
+	ExpiresAt               *int64                      `json:"expires_at"`
+	AutoPauseOnExpired      *bool                       `json:"auto_pause_on_expired"`
+	ProbeEnabled            *bool                       `json:"upstream_billing_probe_enabled"`
+	ConfirmMixedChannelRisk *bool                       `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
 }
 
 // UpdateAccountRequest represents update account request
 // 使用指针类型来区分"未提供"和"设置为0"
 type UpdateAccountRequest struct {
-	Name                    string         `json:"name"`
-	Notes                   *string        `json:"notes"`
-	Type                    string         `json:"type" binding:"omitempty,oneof=oauth setup-token apikey upstream bedrock service_account"`
-	Credentials             map[string]any `json:"credentials"`
-	Extra                   map[string]any `json:"extra"`
-	ProxyID                 *int64         `json:"proxy_id"`
-	Concurrency             *int           `json:"concurrency"`
-	Priority                *int           `json:"priority"`
-	RateMultiplier          *float64       `json:"rate_multiplier"`
-	LoadFactor              *int           `json:"load_factor"`
-	Status                  string         `json:"status" binding:"omitempty,oneof=active inactive error"`
-	GroupIDs                *[]int64       `json:"group_ids"`
-	ExpiresAt               *int64         `json:"expires_at"`
-	AutoPauseOnExpired      *bool          `json:"auto_pause_on_expired"`
-	ProbeEnabled            *bool          `json:"upstream_billing_probe_enabled"`
-	RateSyncEnabled         *bool          `json:"upstream_billing_rate_sync_enabled"`
-	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
+	Warmup                  *service.OpenAIWarmupConfig `json:"warmup"`
+	Name                    string                      `json:"name"`
+	Notes                   *string                     `json:"notes"`
+	Type                    string                      `json:"type" binding:"omitempty,oneof=oauth setup-token apikey upstream bedrock service_account"`
+	Credentials             map[string]any              `json:"credentials"`
+	Extra                   map[string]any              `json:"extra"`
+	ProxyID                 *int64                      `json:"proxy_id"`
+	Concurrency             *int                        `json:"concurrency"`
+	Priority                *int                        `json:"priority"`
+	RateMultiplier          *float64                    `json:"rate_multiplier"`
+	LoadFactor              *int                        `json:"load_factor"`
+	Status                  string                      `json:"status" binding:"omitempty,oneof=active inactive error"`
+	GroupIDs                *[]int64                    `json:"group_ids"`
+	ExpiresAt               *int64                      `json:"expires_at"`
+	AutoPauseOnExpired      *bool                       `json:"auto_pause_on_expired"`
+	ProbeEnabled            *bool                       `json:"upstream_billing_probe_enabled"`
+	RateSyncEnabled         *bool                       `json:"upstream_billing_rate_sync_enabled"`
+	ConfirmMixedChannelRisk *bool                       `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
 }
 
 // BulkUpdateAccountsRequest represents the payload for bulk editing accounts
 type BulkUpdateAccountsRequest struct {
-	AccountIDs              []int64                   `json:"account_ids"`
-	Filters                 *BulkUpdateAccountFilters `json:"filters"`
-	Name                    string                    `json:"name"`
-	ProxyID                 *int64                    `json:"proxy_id"`
-	Concurrency             *int                      `json:"concurrency"`
-	Priority                *int                      `json:"priority"`
-	RateMultiplier          *float64                  `json:"rate_multiplier"`
-	LoadFactor              *int                      `json:"load_factor"`
-	Status                  string                    `json:"status" binding:"omitempty,oneof=active inactive error"`
-	Schedulable             *bool                     `json:"schedulable"`
-	GroupIDs                *[]int64                  `json:"group_ids"`
-	Credentials             map[string]any            `json:"credentials"`
-	Extra                   map[string]any            `json:"extra"`
-	ProbeEnabled            *bool                     `json:"upstream_billing_probe_enabled"`
-	ConfirmMixedChannelRisk *bool                     `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
+	Warmup                  *service.OpenAIWarmupConfig `json:"warmup"`
+	AccountIDs              []int64                     `json:"account_ids"`
+	Filters                 *BulkUpdateAccountFilters   `json:"filters"`
+	Name                    string                      `json:"name"`
+	ProxyID                 *int64                      `json:"proxy_id"`
+	Concurrency             *int                        `json:"concurrency"`
+	Priority                *int                        `json:"priority"`
+	RateMultiplier          *float64                    `json:"rate_multiplier"`
+	LoadFactor              *int                        `json:"load_factor"`
+	Status                  string                      `json:"status" binding:"omitempty,oneof=active inactive error"`
+	Schedulable             *bool                       `json:"schedulable"`
+	GroupIDs                *[]int64                    `json:"group_ids"`
+	Credentials             map[string]any              `json:"credentials"`
+	Extra                   map[string]any              `json:"extra"`
+	ProbeEnabled            *bool                       `json:"upstream_billing_probe_enabled"`
+	ConfirmMixedChannelRisk *bool                       `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
 }
 
 type BulkUpdateAccountFilters struct {
@@ -1017,6 +1021,7 @@ func (h *AccountHandler) Create(c *gin.Context) {
 		response.BadRequest(c, "Invalid request: "+err.Error())
 		return
 	}
+	req.Extra = withWarmupConfig(req.Extra, req.Warmup)
 	if err := service.ValidateOpenAILongContextBillingExtra(req.Platform, req.Extra); err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -1158,6 +1163,18 @@ func (h *AccountHandler) Update(c *gin.Context) {
 		response.BadRequest(c, "Invalid request: "+err.Error())
 		return
 	}
+	if req.Warmup != nil && req.Extra == nil {
+		current, err := h.adminService.GetAccount(c.Request.Context(), accountID)
+		if err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
+		req.Extra = make(map[string]any, len(current.Extra)+1)
+		for key, value := range current.Extra {
+			req.Extra[key] = value
+		}
+	}
+	req.Extra = withWarmupConfig(req.Extra, req.Warmup)
 	if req.RateMultiplier != nil && *req.RateMultiplier < 0 {
 		response.BadRequest(c, "rate_multiplier must be >= 0")
 		return
@@ -2301,6 +2318,7 @@ func (h *AccountHandler) BulkUpdate(c *gin.Context) {
 		response.BadRequest(c, "Invalid request: "+err.Error())
 		return
 	}
+	req.Extra = withWarmupConfig(req.Extra, req.Warmup)
 	if req.RateMultiplier != nil && *req.RateMultiplier < 0 {
 		response.BadRequest(c, "rate_multiplier must be >= 0")
 		return

@@ -2849,6 +2849,9 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 				return mapping.MappedModel, nil
 			},
 			BeforeTurn: func(turn int) error {
+				if err := h.gatewayService.CheckOpenAIWarmupAllowed(ctx, account); err != nil {
+					return service.NewOpenAIWSClientCloseError(coderws.StatusTryAgainLater, "account warmup is pending, please reconnect", err)
+				}
 				// turn==1 的会话屏蔽已由握手层检查覆盖；连接内 flag 只拦截后续 turn。
 				if cyberBlockedThisConn {
 					return service.NewOpenAIWSClientCloseError(coderws.StatusPolicyViolation, cyberSessionBlockedClientMsg, nil)

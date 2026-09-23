@@ -40,7 +40,7 @@
             <span v-if="row.user?.deleted_at" class="ml-1 inline-flex items-center rounded px-1 py-px text-[10px] font-medium leading-tight bg-rose-100 text-rose-600 ring-1 ring-inset ring-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:ring-rose-500/30">
               {{ t('admin.usage.userDeletedBadge') }}
             </span>
-            <span class="ml-1 text-gray-500 dark:text-gray-400">#{{ row.user_id }}</span>
+            <span v-if="row.user_id > 0" class="ml-1 text-gray-500 dark:text-gray-400">#{{ row.user_id }}</span>
           </div>
         </template>
 
@@ -705,6 +705,7 @@ const getRequestTypeLabel = (row: AdminUsageLog): string => {
   if (requestType === 'ws_v2') return t('usage.ws')
   if (requestType === 'stream') return t('usage.stream')
   if (requestType === 'sync') return t('usage.sync')
+  if (requestType === 'warmup') return t(row.request_id?.startsWith('warmup:failed:') ? 'usage.warmupFailed' : 'usage.warmup')
   return t('usage.unknown')
 }
 
@@ -715,6 +716,9 @@ const getRequestTypeBadgeClass = (row: AdminUsageLog): string => {
   if (requestType === 'ws_v2') return 'bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200'
   if (requestType === 'stream') return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
   if (requestType === 'sync') return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+  if (requestType === 'warmup') return row.request_id?.startsWith('warmup:failed:')
+    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+    : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
   return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
 }
 

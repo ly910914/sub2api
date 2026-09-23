@@ -49,13 +49,14 @@ type codexTicketReceipt struct {
 	fixedFingerprint string
 	stateHash        [32]byte
 	capturedAt       time.Time
+	successor        *codexTicketReceipt
 }
 
 type codexTicketReceiptContextKey struct{}
 
 func receiptForCodexTicket(ticket *openAICodexTicket) codexTicketReceipt {
-	return codexTicketReceipt{ticket.AccountID, ticket.Model, ticket.ConfigRevision,
-		ticket.FixedProxyFingerprint, sha256.Sum256([]byte(ticket.State)), ticket.CapturedAt}
+	return codexTicketReceipt{accountID: ticket.AccountID, model: ticket.Model, revision: ticket.ConfigRevision,
+		fixedFingerprint: ticket.FixedProxyFingerprint, stateHash: sha256.Sum256([]byte(ticket.State)), capturedAt: ticket.CapturedAt}
 }
 
 func (r codexTicketReceipt) matches(ticket *openAICodexTicket) bool {
@@ -65,6 +66,10 @@ func (r codexTicketReceipt) matches(ticket *openAICodexTicket) bool {
 	other := receiptForCodexTicket(ticket)
 	return r.accountID == other.accountID && r.model == other.model && r.revision == other.revision &&
 		r.fixedFingerprint == other.fixedFingerprint && r.stateHash == other.stateHash && r.capturedAt.Equal(other.capturedAt)
+}
+
+func (r codexTicketReceipt) tracks(ticket *openAICodexTicket) bool {
+	return r.matches(ticket) || (r.successor != nil && r.successor.matches(ticket))
 }
 
 func (s *OpenAIGatewayService) codexTicketRejectedByWatchdog(ticket *openAICodexTicket) bool {
@@ -88,10 +93,23 @@ func (s *OpenAIGatewayService) applyOpenAICodexTicketToRequest(ctx context.Conte
 	return nil
 }
 
-func (s *OpenAIGatewayService) observeCodexTicketResponse(req *http.Request, resp *http.Response) {
+func (s *OpenAIGatewayService) observeCodexTicketResponse(req *http.Request, resp *http.Response, accounts ...*Account) {
 	receipt, _ := req.Context().Value(codexTicketReceiptContextKey{}).(*codexTicketReceipt)
 	if receipt == nil || resp == nil || resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return
+	}
+	// A successful response with a valid target-length turn-state advances the
+	// ticket lineage and may refresh cookies. A 312 or malformed response never
+	// reaches this path, so rejected responses cannot extend cookie freshness.
+	var account *Account
+	if len(accounts) > 0 {
+		account = accounts[0]
+	}
+	if account == nil && s.accountRepo != nil {
+		account, _ = s.accountRepo.GetByID(req.Context(), receipt.accountID)
+	}
+	if account != nil {
+		s.updateCodexTicketFromResponse(req, resp, receipt, account)
 	}
 	var once sync.Once
 	trigger := func(reason string) {
@@ -104,6 +122,66 @@ func (s *OpenAIGatewayService) observeCodexTicketResponse(req *http.Request, res
 	if resp.Body != nil {
 		resp.Body = &codexTicketWatchdogBody{ReadCloser: resp.Body, model: receipt.model, trigger: trigger}
 	}
+}
+
+func (s *OpenAIGatewayService) updateCodexTicketFromResponse(req *http.Request, resp *http.Response, receipt *codexTicketReceipt, account *Account) {
+	if s == nil || req == nil || resp == nil || receipt == nil || account == nil || resp.StatusCode != http.StatusOK {
+		return
+	}
+	s.openaiCodexAccountMu.Lock()
+	defer s.openaiCodexAccountMu.Unlock()
+	live, err := s.codexTicketLiveAccount(req.Context(), account)
+	if err != nil || !s.openAICodexTicketEnabledContext(req.Context()) || !isOpenAICodexTicketAccount(live) {
+		return
+	}
+	returned := strings.TrimSpace(resp.Header.Get(openAICodexTurnStateHeader))
+	ac := codexAccountTicketConfigOf(live)
+	targetLength := codexTicketTargetLength(ac.TicketPlan)
+	if !ac.Enabled || ac.Model != receipt.model || targetLength <= 0 || returned == "" || len(returned) != targetLength || !validCodexTicketState(returned) {
+		return
+	}
+	current := s.lookupOpenAICodexTicket(live, receipt.model)
+	if !receipt.matches(current) {
+		return
+	}
+	returnedCookies := responseCookiePairs(resp)
+	if returned == current.State && len(returnedCookies) == 0 {
+		return
+	}
+	now := time.Now().Round(0)
+	next := *current
+	next.State = returned
+	next.Length = len(returned)
+	next.CapturedAt = now
+	ttl := time.Duration(s.openAICodexTicketConfig().TTLSeconds) * time.Second
+	if ttl <= 0 {
+		ttl = time.Hour
+	}
+	if ttl > time.Hour {
+		ttl = time.Hour
+	}
+	next.ExpiresAt = now.Add(ttl)
+	if len(returnedCookies) > 0 {
+		next.HarvestCookies = mergeCodexTicketCookies(current.HarvestCookies, returnedCookies)
+		next.HarvestCookiesAt = now
+	}
+	// Preserve the response's session binding: business responses rotate state,
+	// not the session that minted the ticket.
+	if err := s.persistCodexTicketResponse(req.Context(), live, &next); err != nil {
+		return
+	}
+	s.openaiCodexTickets.Store(openAICodexTicketKey(live.ID, next.Model), &next)
+	successor := receiptForCodexTicket(&next)
+	receipt.successor = &successor
+}
+
+func (s *OpenAIGatewayService) persistCodexTicketResponse(ctx context.Context, account *Account, ticket *openAICodexTicket) error {
+	if s.accountRepo == nil {
+		return nil
+	}
+	writeCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer cancel()
+	return s.accountRepo.UpdateExtra(writeCtx, account.ID, map[string]any{openAICodexTicketExtraKey(ticket.Model): ticket})
 }
 
 func (s *OpenAIGatewayService) invalidateCodexTicketFromResponse(receipt codexTicketReceipt, reason string) {
@@ -121,7 +199,7 @@ func (s *OpenAIGatewayService) invalidateCodexTicketFromResponse(receipt codexTi
 	}
 	ac := codexAccountTicketConfigOf(account)
 	current := s.lookupOpenAICodexTicket(account, receipt.model)
-	if !ac.Enabled || !receipt.matches(current) {
+	if !ac.Enabled || !receipt.tracks(current) {
 		s.openaiCodexAccountMu.Unlock()
 		return
 	}

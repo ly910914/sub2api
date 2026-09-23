@@ -383,6 +383,8 @@ export default {
     compactionOnly: 'Compaction Only',
     cyber: 'Cyber',
     live: 'Live',
+    warmup: 'Warmup',
+    warmupFailed: 'Warmup failed',
     unknown: 'Unknown',
     in: 'In',
     out: 'Out',

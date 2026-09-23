@@ -3006,6 +3006,9 @@
         <ProxySelector v-model="form.proxy_id" :proxies="proxies" />
       </div>
 
+      <AccountWarmupFields v-if="form.platform === 'openai' && accountCategory === 'oauth-based'"
+        v-model="warmup" :max-concurrency="form.concurrency" />
+
       <UpstreamRequestIdHeaderField
         v-model="upstreamRequestIdHeader"
         :platform="form.platform"
@@ -3927,6 +3930,8 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Select from '@/components/common/Select.vue'
 import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import UpstreamRequestIdHeaderField from '@/components/account/UpstreamRequestIdHeaderField.vue'
+import AccountWarmupFields from '@/components/account/AccountWarmupFields.vue'
+import { readAccountWarmup } from '@/components/account/accountWarmup'
 import PlatformIcon from '@/components/common/PlatformIcon.vue'
 import Icon from '@/components/icons/Icon.vue'
 import ProxySelector from '@/components/common/ProxySelector.vue'
@@ -4010,10 +4015,13 @@ const oauthStepTitle = computed(() => {
 // Platform-specific hints for API Key type
 // 上游ID：直接上游声明请求标识的响应头名，留空不记录。
 const upstreamRequestIdHeader = ref('')
+const warmup = ref(readAccountWarmup())
 const withUpstreamRequestIdHeader = <T extends Record<string, unknown> | undefined>(extra: T): T | Record<string, unknown> => {
   const name = upstreamRequestIdHeader.value.trim()
-  if (!name) return extra
-  return { ...(extra || {}), upstream_request_id_header: name }
+  const warmupExtra = form.platform === 'openai' && accountCategory.value === 'oauth-based' && warmup.value.enabled
+    ? { openai_warmup: { ...warmup.value } } : {}
+  if (!name && !('openai_warmup' in warmupExtra)) return extra
+  return { ...(extra || {}), ...warmupExtra, ...(name ? { upstream_request_id_header: name } : {}) }
 }
 
 const baseUrlHint = computed(() => {
@@ -5316,6 +5324,7 @@ const resetForm = () => {
   apiKeyBaseUrl.value = 'https://api.anthropic.com'
   apiKeyValue.value = ''
   upstreamRequestIdHeader.value = ''
+  warmup.value = readAccountWarmup()
   upstreamBillingAutoProbeEnabled.value = true
   editQuotaLimit.value = null
   editQuotaDailyLimit.value = null

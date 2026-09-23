@@ -34,6 +34,9 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	defaultMappedModel string,
 ) (*OpenAIForwardResult, error) {
 	rememberOpenCodeInboundBody(c, body)
+	if err := s.CheckOpenAIWarmupAllowed(ctx, account); err != nil {
+		return nil, err
+	}
 	beginUpstreamResponseModelObservation(c)
 	ClearActualOpenAIUpstreamEndpoint(c)
 	if shouldForwardOpenAIResponsesViaRawChatCompletions(account) {
@@ -386,6 +389,7 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	if err := s.applyOpenAICodexTicketToRequest(ctx, account, upstreamModel, upstreamReq); err != nil {
 		return nil, err
 	}
+	s.restoreBoundCodexTicketHarvestIdentity(ctx, upstreamReq.Header, account)
 
 	// 7. Send request
 	proxyURL := ""

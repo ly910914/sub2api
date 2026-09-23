@@ -149,6 +149,8 @@ var auditActionOverrides = map[string]string{
 var auditBodyOmittedRoutes = map[string]struct{}{
 	"PUT /api/v1/admin/accounts/:id/codex-ticket":               {},
 	"POST /api/v1/admin/accounts/:id/codex-ticket/harvest":      {},
+	"POST /api/v1/admin/accounts/:id/warmup/retry":              {},
+	"POST /api/v1/admin/accounts/:id/warmup/reset":              {},
 	"POST /api/v1/auth/passkey/login/finish":                    {},
 	"POST /api/v1/user/passkeys/register/finish":                {},
 	"POST /api/v1/admin/accounts/import/codex-session":          {},

@@ -1,6 +1,21 @@
 export default {
     accounts: {
+      warmup: {
+        title: 'Account warmup', enabled: 'Enable account warmup', model: 'Warmup model', models: 'Warmup model sessions', addModel: 'Add model', removeModel: 'Remove model',
+        concurrency: 'Concurrent sessions', threshold: 'Successful request threshold', prompt: 'Prompt per turn',
+        modelHint: 'Each model occupies a sticky session slot. Sol + Astra with concurrency 2 runs one of each in parallel.',
+        contextHint: 'Each session keeps its conversation history and reuses the same prompt_cache_key.',
+        bulkApply: 'Apply warmup settings', retry: 'Retry', reset: 'Restart warmup',
+        resetConfirm: 'Reset warmup progress and conversations? Normal scheduling will be blocked while enabled warmup runs.',
+        configResetConfirm: 'Changing the model, concurrency, or prompt resets warmup progress and conversations. Save these changes?',
+        operationFailed: 'Warmup operation failed',
+        states: { disabled: 'Warmup off', pending: 'Warmup pending', running: 'Warming up', cooling: 'Warmup cooling down', failed: 'Warmup failed', completed: 'Warmup completed' }
+      },
       stateTicket: {
+  "egressLabel": "Proxy egress check:",
+  "egressChecking": "Checking",
+  "egressFailed": "Check failed",
+  "egressHint": "Sampled on a separate connection. The pool may rotate IPs per connection; this is not the exact egress of each ticket request.",
   "title": "STATE ticket",
   "description": "Opt in this account only. Off by default; other accounts are unaffected.",
   "enable": "Enable STATE tickets for this account",
@@ -24,6 +39,10 @@ export default {
   "savedTicket": "Saved ticket",
   "capturedAt": "Captured {time}",
   "expiresAt": "Expires {time}",
+	"cookieCount": "Session cookies: {count}",
+	"cookieFresh": "Available for {time}",
+	"cookieExpired": "Expired",
+	"cookieExpiresAt": "Cookie window ends {time}",
   "savedTicketHint": "The ticket survives a service restart. You do not need to copy the original ticket; only these times are shown.",
   "refreshing": "Renewing; the current ticket is still usable, {time} remaining",
   "refreshFailedUsable": "This renewal failed; the current ticket remains in use until it expires.",

@@ -388,6 +388,8 @@ export default {
     compactionOnly: '仅原生压缩',
     cyber: '安全策略',
     live: 'Live',
+    warmup: '预热',
+    warmupFailed: '预热失败',
     unknown: '未知',
     in: '输入',
     out: '输出',

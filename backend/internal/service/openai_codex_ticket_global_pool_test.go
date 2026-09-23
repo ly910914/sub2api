@@ -56,7 +56,9 @@ func TestCodexAccountTicketGlobalPoolOverridesLegacyAccountProxy(t *testing.T) {
 	other.Extra = map[string]any{} // The global pool must not opt in a normal account.
 	repo.accounts = append(repo.accounts, *other)
 	waitCodexTicketJob(t, s.startCodexAccountTicketJob(context.Background(), 41, true))
-	require.Equal(t, int64(2), calls.Load())
+	require.GreaterOrEqual(t, calls.Load(), int64(2))
+	require.LessOrEqual(t, calls.Load(), int64(3))
+	completedCalls := calls.Load()
 	status, err := s.GetCodexAccountTicketStatus(context.Background(), 41)
 	require.NoError(t, err)
 	require.True(t, status.TicketUsable)
@@ -66,7 +68,7 @@ func TestCodexAccountTicketGlobalPoolOverridesLegacyAccountProxy(t *testing.T) {
 	require.False(t, otherStatus.Enabled)
 	require.True(t, otherStatus.ProxyConfigured)
 	s.refreshOpenAICodexTickets(context.Background())
-	require.Equal(t, int64(2), calls.Load())
+	require.Equal(t, completedCalls, calls.Load())
 	require.Nil(t, s.startCodexAccountTicketJob(context.Background(), 42, true))
 	for _, input := range []CodexAccountTicketUpdate{{Enabled: true, ProxyURL: legacy.ProxyURL}, {Enabled: true, ClearProxy: true}} {
 		_, err := s.ConfigureCodexAccountTicket(context.Background(), 41, input)

@@ -37,11 +37,22 @@ the independent STATE Kit plugin for these accounts.
   proxy for acquisition only.
 - Tickets last one hour and renew ten minutes before expiry. A failed renewal
   preserves a still-valid ticket and its original expiration.
-- Acquisition makes at most eight attempts and has an eight-minute total
-  deadline, including account authentication. Each failed attempt is shown in
+- Acquisition uses two concurrent workers per account and retries for up to five
+  minutes, including account authentication. Verification and persistence are
+  serialized; a verified, saved ticket cancels the remaining worker. There is
+  no attempt-count limit. Each failed attempt is shown in
   the account panel while retries continue. Logs include safe failure summaries
   distinguishing acquisition from business-route verification; credentials and
-  STATE contents are never included. Failed rounds cool down for five minutes.
+  STATE contents are never included. Failed rounds cool down for three minutes.
+  Authentication failures and HTTP 401/429 end a round early and use the same
+  cooldown. HTTP 403 in acquisition or business verification is retried within
+  the five-minute round. Shutdown, opt-out and proxy changes cancel in-flight work.
+- During acquisition, the panel shows an independent proxy egress sample from
+  `https://chatgpt.com/cdn-cgi/trace`, refreshed every 30 seconds with an eight-second
+  timeout. The sample uses the harvest pool and optional outer proxy without
+  account credentials or STATE. It is not the exact exit of a ticket request:
+  rotating proxies may assign a different IP to every connection. Diagnostics
+  do not block acquisition and stop when the acquisition round finishes.
 - An enabled account without a valid ticket is excluded from scheduling for its
   configured target model. Other models and accounts keep their normal paths.
   Disabling the account's STATE switch restores its normal routing.

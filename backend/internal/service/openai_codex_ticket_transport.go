@@ -61,6 +61,21 @@ func newCodexTicketChainedClient(proxyURL, upstreamHTTPProxyURL string) (*http.C
 	return &http.Client{Transport: transport, Timeout: 60 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}, nil
 }
 
+func (s *OpenAIGatewayService) doCodexTicketProbe(req *http.Request, account *Account, proxyURL string, harvesting bool) (*http.Response, error) {
+	if harvesting && s.openAICodexTicketConfig().HarvestDialProxyURL != "" {
+		client, err := newCodexTicketChainedClient(proxyURL, s.openAICodexTicketConfig().HarvestDialProxyURL)
+		if err != nil {
+			return nil, err
+		}
+		defer client.CloseIdleConnections()
+		return client.Do(req)
+	}
+	if s.httpUpstream == nil {
+		return nil, errors.New("ticket transport unavailable")
+	}
+	return s.httpUpstream.Do(req, proxyURL, account.ID, account.Concurrency)
+}
+
 type codexTicketHTTPConnectDialer struct {
 	proxy   *url.URL
 	timeout time.Duration
