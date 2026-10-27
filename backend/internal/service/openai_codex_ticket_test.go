@@ -315,7 +315,7 @@ func TestExtractOpenAICodexTicketModel(t *testing.T) {
 }
 func TestOpenAICodexTicketGateCompactRequestUsesForwardOutboundModel(t *testing.T) {
 	svc := ticketTestService(t, config.OpenAICodexTicketConfig{Enabled: true}, nil)
-	svc.cfg.Gateway.OpenAICompactModel = "gpt-5.5"
+	svc.cfg.Gateway.OpenAICompactModel = "gpt-6.1-sol"
 	account := ticketTestAccount(41)
 	require.True(t, svc.isOpenAIAccountRequestRuntimeBlocked(account, "gpt-6-astra", false))
 	require.False(t, svc.isOpenAIAccountRequestRuntimeBlocked(account, "gpt-6-astra", true))
