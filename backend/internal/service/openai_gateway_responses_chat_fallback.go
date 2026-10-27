@@ -41,6 +41,10 @@ func (s *OpenAIGatewayService) forwardResponsesViaRawChatCompletions(
 		writeOpenAIResponsesFallbackError(c, http.StatusBadRequest, "invalid_request_error", "model is required")
 		return nil, fmt.Errorf("missing model in request")
 	}
+	if account.UsesOAuthChatBridge() {
+		chatReq := &apicompat.ChatCompletionsRequest{Model: originalModel, Stream: responsesReq.Stream}
+		return s.forwardOAuthChatBridge(ctx, c, account, chatReq, &responsesReq, body, "", startTime)
+	}
 
 	clientStream := responsesReq.Stream
 	// custom 工具（如 codex 的 exec）降级为 function 工具转发，回程需按名字还原为

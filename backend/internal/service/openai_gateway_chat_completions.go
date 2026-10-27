@@ -73,10 +73,13 @@ func (s *OpenAIGatewayService) forwardAsChatCompletions(
 	defaultMappedModel string,
 	compatPromptCacheTenantIsolated bool,
 ) (*OpenAIForwardResult, error) {
-	rememberOpenCodeInboundBody(c, body)
 	if err := s.CheckOpenAIWarmupAllowed(ctx, account); err != nil {
 		return nil, err
 	}
+	if account.IsPrismEnabled() {
+		return s.forwardPrism(ctx, c, account, body, "chat", defaultMappedModel)
+	}
+	rememberOpenCodeInboundBody(c, body)
 	beginUpstreamResponseModelObservation(c)
 	ClearActualOpenAIUpstreamEndpoint(c)
 	if shouldForwardOpenAIResponsesViaRawChatCompletions(account) {
@@ -348,6 +351,14 @@ func (s *OpenAIGatewayService) forwardAsChatCompletions(
 	releaseUpstreamCtx()
 	if err != nil {
 		return nil, fmt.Errorf("build upstream request: %w", err)
+	}
+	if !isResponsesShape {
+		// Chat conversion produces ordinary Responses, without the Lite
+		// reasoning.context/additional_tools contract. The two-group Chat
+		// relay also drops this header via openaiCCRawAllowedHeaders. Strip it
+		// only from this outbound request, preserving native Responses-shaped
+		// traffic and the original headers for logging or account failover.
+		upstreamReq.Header.Del(responsesLiteHeader)
 	}
 
 	if promptCacheKey != "" {
@@ -748,6 +759,15 @@ func (s *OpenAIGatewayService) handleChatBufferedStreamingResponse(
 	acc.SupplementResponseOutput(finalResponse)
 
 	chatResp := apicompat.ResponsesToChatCompletions(finalResponse, originalModel)
+	if bridge, ok := c.Writer.(*oauthChatBridgeWriter); ok && !bridge.anthropic {
+		// Preserve wire-only metadata, supplementing output only for upstreams
+		// that omit their terminal snapshot.
+		if len(bridge.nativeResponse) == 0 {
+			bridge.nativeResponse, _ = json.Marshal(finalResponse)
+		} else if !gjson.GetBytes(bridge.nativeResponse, "output.0").Exists() && len(finalResponse.Output) > 0 {
+			bridge.nativeResponse, _ = sjson.SetBytes(bridge.nativeResponse, "output", finalResponse.Output)
+		}
+	}
 
 	if s.responseHeaderFilter != nil {
 		responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
@@ -1014,6 +1034,15 @@ func (s *OpenAIGatewayService) handleChatStreamingResponse(
 		}
 
 		chunks := apicompat.ResponsesEventToChatChunks(&event, state)
+		if bridge, ok := c.Writer.(*oauthChatBridgeWriter); ok && !bridge.anthropic {
+			if len(chunks) == 0 {
+				chunks = []apicompat.ChatCompletionsChunk{{}}
+			}
+			// Carry the original wire event only across this internal boundary.
+			// Reconstructing it from Chat deltas loses phases, encrypted reasoning,
+			// content parts, terminal details and forward-compatible fields.
+			chunks[0].ResponsesEvent = json.RawMessage(payload)
+		}
 		if !clientDisconnected {
 			for _, chunk := range chunks {
 				refusalDetector.ObserveChatChunk(chunk)

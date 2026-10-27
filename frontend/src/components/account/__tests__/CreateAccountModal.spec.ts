@@ -845,6 +845,21 @@ describe('CreateAccountModal OpenAI long-context billing', () => {
     expect(probeUpstreamBillingMock).toHaveBeenCalledWith(42)
   })
 
+  it('includes the selected OAuth Chat route when importing a Codex session', async () => {
+    const wrapper = mountModal()
+    await selectButtonByText(wrapper, 'OpenAI')
+    expect(wrapper.find('[data-testid="openai-endpoint-capability-embeddings"]').exists()).toBe(false)
+    wrapper.getComponent('[data-testid="openai-responses-mode-select"]').vm.$emit('update:modelValue', 'force_chat_completions')
+    await flushPromises()
+    await wrapper.get('form#create-account-form input[type="text"]').setValue('OAuth Chat')
+    await wrapper.get('form#create-account-form').trigger('submit.prevent')
+    await flushPromises()
+    await wrapper.get('[data-testid="import-codex-session"]').trigger('click')
+    await flushPromises()
+    expect(importCodexSessionMock.mock.calls[0]?.[0]?.extra?.openai_responses_mode).toBe('force_chat_completions')
+    wrapper.unmount()
+  })
+
   it('leaves Codex session import billing ownership to the backend', async () => {
     const wrapper = await openCodexImportStep()
     await wrapper.get('[data-testid="import-codex-session"]').trigger('click')
@@ -894,6 +909,37 @@ describe('CreateAccountModal OpenAI long-context billing', () => {
 
     expect(createOpenAICodexPATMock.mock.calls[0]?.[0]?.extra?.openai_long_context_billing_enabled).toBe(false)
   })
+  it('creates a Prism account without an OpenAI API key', async () => {
+    const wrapper = mountModal()
+    await selectButtonByText(wrapper, 'OpenAI')
+    await selectButtonByText(wrapper, 'API Key')
+    await wrapper.get('form#create-account-form input[type="text"]').setValue('Prism account')
+    await wrapper.get('[data-testid="prism-toggle"]').trigger('click')
+    await wrapper.get('[data-testid="prism-cookie"]').setValue('prism_oai_access_token=login')
+    await wrapper.get('form#create-account-form').trigger('submit.prevent')
+    await flushPromises()
+    expect(createAccountMock).toHaveBeenCalledOnce()
+    expect(createAccountMock.mock.calls[0]?.[0]?.extra?.prism_enabled).toBe(true)
+    expect(createAccountMock.mock.calls[0]?.[0]?.credentials?.prism_cookie).toBe('prism_oai_access_token=login')
+    expect(createAccountMock.mock.calls[0]?.[0]?.credentials?.api_key).toBe('')
+    wrapper.unmount()
+  })
+
+  it('creates a Prism account with a login ticket instead of a cookie', async () => {
+    const wrapper = mountModal()
+    await selectButtonByText(wrapper, 'OpenAI')
+    await selectButtonByText(wrapper, 'API Key')
+    await wrapper.get('form#create-account-form input[type="text"]').setValue('Prism link account')
+    await wrapper.get('[data-testid="prism-toggle"]').trigger('click')
+    wrapper.findComponent({ name: 'PrismAccountSettings' }).vm.$emit('update:loginSession', 'completed-ticket')
+    await wrapper.get('form#create-account-form').trigger('submit.prevent')
+    await flushPromises()
+    expect(createAccountMock).toHaveBeenCalledOnce()
+    expect(createAccountMock.mock.calls[0]?.[0]?.prism_login_session).toBe('completed-ticket')
+    expect(createAccountMock.mock.calls[0]?.[0]?.credentials).not.toHaveProperty('prism_cookie')
+    wrapper.unmount()
+  })
+
 })
 
 describe('CreateAccountModal gemini explicit cache upstream switch', () => {

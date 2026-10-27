@@ -455,6 +455,10 @@
         </div>
       </div>
 
+      <PrismAccountSettings v-if="form.platform === 'openai' && accountCategory === 'apikey'"
+        v-model:enabled="prismEnabled" v-model:cookie="prismCookie"
+        v-model:login-session="prismLoginSession" :proxy-id="form.proxy_id" />
+
       <!-- Account Type Selection (Grok) -->
       <div v-if="form.platform === 'grok'">
         <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
@@ -1555,7 +1559,7 @@
           <input
             v-model="apiKeyValue"
             type="password"
-            required
+            :required="!(form.platform === 'openai' && prismEnabled)"
             class="input font-mono"
             :placeholder="apiKeyValuePlaceholder"
           />
@@ -3584,9 +3588,9 @@
         </div>
       </div>
 
-      <!-- OpenAI APIKey Responses API support mode -->
+      <!-- OpenAI account Responses routing -->
       <div
-        v-if="form.platform === 'openai' && accountCategory === 'apikey'"
+        v-if="form.platform === 'openai' && (accountCategory === 'apikey' || form.type === 'oauth')"
         class="space-y-4 border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between gap-4">
@@ -3612,7 +3616,7 @@
         >
           {{ t('admin.accounts.openai.responsesModeTextDisabledHint') }}
         </p>
-        <div>
+        <div v-if="accountCategory === 'apikey'">
           <label class="input-label mb-2 block">{{ t('admin.accounts.openai.endpointCapabilities') }}</label>
           <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <label
@@ -4115,6 +4119,7 @@
 </template>
 
 <script setup lang="ts">
+import PrismAccountSettings from '@/components/account/PrismAccountSettings.vue'
 import { ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
@@ -4403,6 +4408,9 @@ const accountCategory = ref<'oauth-based' | 'apikey' | 'bedrock' | 'service_acco
 const addMethod = ref<AddMethod>('oauth') // For oauth-based: 'oauth' or 'setup-token'
 const apiKeyBaseUrl = ref('https://api.anthropic.com')
 const apiKeyValue = ref('')
+const prismEnabled = ref(false)
+const prismCookie = ref('')
+const prismLoginSession = ref('')
 const upstreamBillingAutoProbeEnabled = ref(true)
 
 // ── 国产供应商（Kimi / Zhipu / DeepSeek）账号类型、API 协议与端点 ──
@@ -4823,7 +4831,7 @@ const openAIEndpointCapabilityOptions = computed<{ value: OpenAIEndpointCapabili
   { value: 'seedance', label: 'Seedance (Ark)' }
 ])
 const openAITextGenerationCapabilityEnabled = computed(() =>
-  openAIEndpointCapabilities.value.includes('chat_completions')
+  form.type === 'oauth' || openAIEndpointCapabilities.value.includes('chat_completions')
 )
 
 const normalizeOpenAIEndpointCapabilities = (values: OpenAIEndpointCapability[]) => {
@@ -5562,6 +5570,14 @@ const ensureAntigravityMixedChannelConfirmed = async (onConfirm: () => Promise<v
 }
 
 const submitCreateAccount = async (payload: CreateAccountRequest) => {
+  if (payload.platform === 'openai' && payload.type === 'apikey' && prismEnabled.value) {
+    payload.extra = { ...payload.extra, prism_enabled: true }
+    if (prismLoginSession.value) {
+      payload.prism_login_session = prismLoginSession.value
+    } else {
+      payload.credentials = { ...payload.credentials, prism_cookie: prismCookie.value.trim() }
+    }
+  }
   submitting.value = true
   try {
     const account = await adminAPI.accounts.create(withAntigravityConfirmFlag(payload))
@@ -5680,6 +5696,9 @@ const resetForm = () => {
   openaiFlattenNamespacesEnabled.value = false
   openAILongContextBillingEnabled.value = false
   openAILongContextBillingTouched.value = false
+  prismEnabled.value = false
+  prismCookie.value = ''
+  prismLoginSession.value = ''
   openAICompactMode.value = 'auto'
   openAIResponsesMode.value = 'auto'
   openAIEndpointCapabilities.value = ['chat_completions', 'embeddings']
@@ -5803,7 +5822,7 @@ const buildOpenAIExtra = (base?: Record<string, unknown>): Record<string, unknow
   }
 
   if (
-    accountCategory.value === 'apikey' &&
+    (accountCategory.value === 'apikey' || form.type === 'oauth') &&
     openAITextGenerationCapabilityEnabled.value &&
     openAIResponsesMode.value !== 'auto'
   ) {
@@ -6110,7 +6129,7 @@ const handleSubmit = async () => {
   }
 
   // For apikey type, create directly
-  if (!apiKeyValue.value.trim()) {
+  if (!apiKeyValue.value.trim() && !(form.platform === 'openai' && prismEnabled.value)) {
     appStore.showError(t('admin.accounts.pleaseEnterApiKey'))
     return
   }

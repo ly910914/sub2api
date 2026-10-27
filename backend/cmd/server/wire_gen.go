@@ -659,6 +659,7 @@ func provideCleanup(
 			{"OpenAIWSPool", func() error {
 				if openAIGateway != nil {
 					openAIGateway.CloseOpenAIWSPool()
+					openAIGateway.ClosePrismWorkers()
 				}
 				return nil
 			}},

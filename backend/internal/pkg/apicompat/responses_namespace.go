@@ -54,7 +54,7 @@ func FlattenResponsesNamespacesExcept(req map[string]any, preserved map[string]b
 		}
 		for _, rawChild := range namespaceChildren(tool) {
 			child, ok := rawChild.(map[string]any)
-			if !ok || strings.TrimSpace(stringValue(child["type"])) != "function" {
+			if !ok || (stringValue(child["type"]) != "function" && stringValue(child["type"]) != "custom") {
 				continue
 			}
 			name := strings.TrimSpace(stringValue(child["name"]))
@@ -91,7 +91,7 @@ func FlattenResponsesNamespacesExcept(req map[string]any, preserved map[string]b
 		}
 		for _, rawChild := range namespaceChildren(tool) {
 			child, ok := rawChild.(map[string]any)
-			if !ok || strings.TrimSpace(stringValue(child["type"])) != "function" {
+			if !ok || (stringValue(child["type"]) != "function" && stringValue(child["type"]) != "custom") {
 				continue
 			}
 			name := strings.TrimSpace(stringValue(child["name"]))
@@ -159,7 +159,7 @@ func rewriteNamespaceQualifiedCalls(value any, names map[string]ResponsesNamespa
 			rewriteNamespaceQualifiedCalls(item, names)
 		}
 	case map[string]any:
-		if strings.TrimSpace(stringValue(typed["type"])) == "function_call" {
+		if typ := strings.TrimSpace(stringValue(typed["type"])); typ == "function_call" || typ == "custom_tool_call" {
 			rewriteNamespaceQualifiedCall(typed, names)
 		}
 		for _, child := range typed {
@@ -192,7 +192,7 @@ func restoreResponsesNamespaceValue(value any, names map[string]ResponsesNamespa
 			changed = restoreResponsesNamespaceValue(item, names) || changed
 		}
 	case map[string]any:
-		if strings.TrimSpace(stringValue(typed["type"])) == "function_call" {
+		if typ := strings.TrimSpace(stringValue(typed["type"])); typ == "function_call" || typ == "custom_tool_call" {
 			if entry, ok := names[strings.TrimSpace(stringValue(typed["name"]))]; ok {
 				typed["name"] = entry.Name
 				typed["namespace"] = entry.Namespace

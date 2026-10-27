@@ -1561,6 +1561,7 @@ export interface OpenAIResponsesState {
 
 export interface CreateAccountRequest {
   warmup?: import('@/components/account/accountWarmup').AccountWarmupConfig
+  prism_login_session?: string
   name: string
   notes?: string | null
   platform: AccountPlatform
@@ -1581,6 +1582,7 @@ export interface CreateAccountRequest {
 
 export interface UpdateAccountRequest {
   warmup?: import('@/components/account/accountWarmup').AccountWarmupConfig
+  prism_login_session?: string
   name?: string
   notes?: string | null
   type?: AccountType

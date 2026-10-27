@@ -172,10 +172,15 @@ func validateBulkOpenAISettingsTargets(
 			}
 		}
 
-		if settings.endpointCapabilities || settings.responsesMode {
+		if settings.endpointCapabilities {
 			if account.Platform != PlatformOpenAI || account.Type != AccountTypeAPIKey {
-				return 0, invalidBulkOpenAITarget(accountID, "endpoint capabilities and Responses routing require an OpenAI API-key account")
+				return 0, invalidBulkOpenAITarget(accountID, "endpoint capabilities require an OpenAI API-key account")
 			}
+		}
+
+		if settings.responsesMode && (account.Platform != PlatformOpenAI ||
+			(account.Type != AccountTypeAPIKey && account.Type != AccountTypeOAuth)) {
+			return 0, invalidBulkOpenAITarget(accountID, "Responses routing requires an OpenAI OAuth or API-key account")
 		}
 
 		if settings.forcedResponsesMode && !settings.capabilitiesIncludeChat &&

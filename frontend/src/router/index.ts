@@ -17,6 +17,12 @@ import { resolveRouteDocumentTitle } from './title'
  * Route definitions with lazy loading
  */
 const routes: RouteRecordRaw[] = [
+  {
+    path: '/admin/prism-login',
+    name: 'AdminPrismLogin',
+    component: () => import('@/views/admin/PrismLoginView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true, title: 'Prism Login' }
+  },
   // ==================== Setup Routes ====================
   {
     path: '/setup',

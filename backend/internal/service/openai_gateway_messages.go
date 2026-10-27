@@ -42,10 +42,16 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	} else if changed {
 		body = sanitized
 	}
-	rememberOpenCodeInboundBody(c, body)
 	if err := s.CheckOpenAIWarmupAllowed(ctx, account); err != nil {
 		return nil, err
 	}
+	if account.IsPrismEnabled() {
+		return s.forwardPrism(ctx, c, account, body, "messages", defaultMappedModel)
+	}
+	if account.UsesOAuthChatBridge() {
+		return s.forwardAnthropicViaRawChatCompletions(ctx, c, account, body, defaultMappedModel)
+	}
+	rememberOpenCodeInboundBody(c, body)
 	beginUpstreamResponseModelObservation(c)
 	ClearActualOpenAIUpstreamEndpoint(c)
 	// Web Search 模拟：Chat Completions 转换会丢掉 web_search 工具，纯 web_search
@@ -866,6 +872,7 @@ func (s *OpenAIGatewayService) readOpenAICompatBufferedTerminal(
 						s.parseSSEUsageBytesWithType([]byte(payload), event.Type, &usage)
 						acc.ProcessEvent(&event)
 						if response := openAICompatTerminalResponse(&event, []byte(payload)); isOpenAICompatResponsesTerminalEvent(event.Type) && response != nil {
+							captureOAuthChatNativeResponse(c, payload)
 							if event.Usage != nil {
 								usage = copyOpenAIUsageFromResponsesUsage(event.Usage)
 								if response.Usage == nil {
@@ -915,6 +922,7 @@ func (s *OpenAIGatewayService) readOpenAICompatBufferedTerminal(
 			acc.ProcessEvent(&event)
 
 			if response := openAICompatTerminalResponse(&event, []byte(payload)); isOpenAICompatResponsesTerminalEvent(event.Type) && response != nil {
+				captureOAuthChatNativeResponse(c, payload)
 				if event.Usage != nil {
 					usage = copyOpenAIUsageFromResponsesUsage(event.Usage)
 					if response.Usage == nil {

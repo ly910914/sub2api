@@ -146,6 +146,7 @@ type CreateAccountRequest struct {
 	AutoPauseOnExpired      *bool                       `json:"auto_pause_on_expired"`
 	ProbeEnabled            *bool                       `json:"upstream_billing_probe_enabled"`
 	ConfirmMixedChannelRisk *bool                       `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
+	PrismLoginSession       string         `json:"prism_login_session"`
 }
 
 // UpdateAccountRequest represents update account request
@@ -169,6 +170,7 @@ type UpdateAccountRequest struct {
 	ProbeEnabled            *bool                       `json:"upstream_billing_probe_enabled"`
 	RateSyncEnabled         *bool                       `json:"upstream_billing_rate_sync_enabled"`
 	ConfirmMixedChannelRisk *bool                       `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
+	PrismLoginSession       string         `json:"prism_login_session"`
 }
 
 // BulkUpdateAccountsRequest represents the payload for bulk editing accounts
@@ -1043,6 +1045,10 @@ func (h *AccountHandler) Create(c *gin.Context) {
 		return
 	}
 	req.Extra = withWarmupConfig(req.Extra, req.Warmup)
+	if req.PrismLoginSession != "" && req.Platform != service.PlatformOpenAI {
+		response.BadRequest(c, "Prism login requires an OpenAI account")
+		return
+	}
 	if err := service.ValidateOpenAILongContextBillingExtra(req.Platform, req.Extra); err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -1066,23 +1072,28 @@ func (h *AccountHandler) Create(c *gin.Context) {
 	var createdAccount *service.Account
 
 	result, err := executeAdminIdempotent(c, "admin.accounts.create", req, service.DefaultWriteIdempotencyTTL(), func(ctx context.Context) (any, error) {
-		account, execErr := h.adminService.CreateAccount(ctx, &service.CreateAccountInput{
-			Name:                  req.Name,
-			Notes:                 req.Notes,
-			Platform:              req.Platform,
-			Type:                  req.Type,
-			Credentials:           req.Credentials,
-			Extra:                 req.Extra,
-			ProxyID:               req.ProxyID,
-			Concurrency:           req.Concurrency,
-			Priority:              req.Priority,
-			RateMultiplier:        req.RateMultiplier,
-			LoadFactor:            req.LoadFactor,
-			GroupIDs:              req.GroupIDs,
-			ExpiresAt:             req.ExpiresAt,
-			AutoPauseOnExpired:    req.AutoPauseOnExpired,
-			ProbeEnabled:          req.ProbeEnabled,
-			SkipMixedChannelCheck: skipCheck,
+		var account *service.Account
+		execErr := withPrismLogin(ctx, c, req.PrismLoginSession, 0, req.Credentials, func(credentials map[string]any) error {
+			var saveErr error
+			account, saveErr = h.adminService.CreateAccount(ctx, &service.CreateAccountInput{
+				Name:                  req.Name,
+				Notes:                 req.Notes,
+				Platform:              req.Platform,
+				Type:                  req.Type,
+				Credentials:           credentials,
+				Extra:                 req.Extra,
+				ProxyID:               req.ProxyID,
+				Concurrency:           req.Concurrency,
+				Priority:              req.Priority,
+				RateMultiplier:        req.RateMultiplier,
+				LoadFactor:            req.LoadFactor,
+				GroupIDs:              req.GroupIDs,
+				ExpiresAt:             req.ExpiresAt,
+				AutoPauseOnExpired:    req.AutoPauseOnExpired,
+				ProbeEnabled:          req.ProbeEnabled,
+				SkipMixedChannelCheck: skipCheck,
+			})
+			return saveErr
 		})
 		if execErr != nil {
 			return nil, execErr
@@ -1210,24 +1221,29 @@ func (h *AccountHandler) Update(c *gin.Context) {
 	// 确定是否跳过混合渠道检查
 	skipCheck := req.ConfirmMixedChannelRisk != nil && *req.ConfirmMixedChannelRisk
 
-	account, err := h.adminService.UpdateAccount(c.Request.Context(), accountID, &service.UpdateAccountInput{
-		Name:                  req.Name,
-		Notes:                 req.Notes,
-		Type:                  req.Type,
-		Credentials:           req.Credentials,
-		Extra:                 req.Extra,
-		ProxyID:               req.ProxyID,
-		Concurrency:           req.Concurrency, // 指针类型，nil 表示未提供
-		Priority:              req.Priority,    // 指针类型，nil 表示未提供
-		RateMultiplier:        req.RateMultiplier,
-		LoadFactor:            req.LoadFactor,
-		Status:                req.Status,
-		GroupIDs:              req.GroupIDs,
-		ExpiresAt:             req.ExpiresAt,
-		AutoPauseOnExpired:    req.AutoPauseOnExpired,
-		ProbeEnabled:          req.ProbeEnabled,
-		RateSyncEnabled:       req.RateSyncEnabled,
-		SkipMixedChannelCheck: skipCheck,
+	var account *service.Account
+	err = withPrismLogin(c.Request.Context(), c, req.PrismLoginSession, accountID, req.Credentials, func(credentials map[string]any) error {
+		var saveErr error
+		account, saveErr = h.adminService.UpdateAccount(c.Request.Context(), accountID, &service.UpdateAccountInput{
+			Name:                  req.Name,
+			Notes:                 req.Notes,
+			Type:                  req.Type,
+			Credentials:           credentials,
+			Extra:                 req.Extra,
+			ProxyID:               req.ProxyID,
+			Concurrency:           req.Concurrency, // 指针类型，nil 表示未提供
+			Priority:              req.Priority,    // 指针类型，nil 表示未提供
+			RateMultiplier:        req.RateMultiplier,
+			LoadFactor:            req.LoadFactor,
+			Status:                req.Status,
+			GroupIDs:              req.GroupIDs,
+			ExpiresAt:             req.ExpiresAt,
+			AutoPauseOnExpired:    req.AutoPauseOnExpired,
+			ProbeEnabled:          req.ProbeEnabled,
+			RateSyncEnabled:       req.RateSyncEnabled,
+			SkipMixedChannelCheck: skipCheck,
+		})
+		return saveErr
 	})
 	if err != nil {
 		// 检查是否为混合渠道错误

@@ -18,6 +18,7 @@ import (
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/prismbridge"
 )
 
 // Account management implementations
@@ -382,6 +383,12 @@ func normalizeOpenAILongContextBillingExtra(platform string, extra map[string]an
 		return nil, err
 	}
 
+	if raw, exists := extra["openai_responses_mode"]; exists {
+		if _, _, err := normalizeBulkOpenAIResponsesMode(raw); err != nil {
+			return nil, err
+		}
+	}
+
 	normalized := maps.Clone(extra)
 	if normalized == nil {
 		normalized = make(map[string]any, 1)
@@ -483,6 +490,9 @@ func buildAccountForCreate(input *CreateAccountInput, accountExtra map[string]an
 func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccountInput) (*Account, error) {
 	accountExtra, err := normalizeOpenAILongContextBillingExtra(input.Platform, input.Extra)
 	if err != nil {
+		return nil, err
+	}
+	if err := validatePrismAccount(&Account{Platform: input.Platform, Type: input.Type, Credentials: input.Credentials, Extra: accountExtra}); err != nil {
 		return nil, err
 	}
 	accountExtra, err = normalizeGrokMediaEligibilityExtra(input.Platform, accountExtra)
@@ -589,6 +599,8 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 	if account.Platform == PlatformTypeSafe && input.Type != "" && input.Type != AccountTypeAPIKey {
 		return nil, errors.New("typesafe accounts only support apikey credentials")
 	}
+	previousPrismEnabled := account.IsPrismEnabled()
+	previousPrismCookie := account.GetCredential(prismCookieKey)
 	var normalizedExtra map[string]any
 	if input.Extra != nil {
 		normalizedExtra, err = normalizeOpenAILongContextBillingUpdateExtra(account, input)
@@ -739,6 +751,9 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 		}
 		ComputeQuotaResetAt(account.Extra)
 		NormalizeFixedQuotaWindows(account.Extra)
+	}
+	if err := validatePrismAccount(account); err != nil {
+		return nil, err
 	}
 	if input.Extra == nil {
 		account.Extra = prepareCodexFingerprintExtraForUpdate(account, account.Extra)
@@ -936,6 +951,9 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 	if err != nil {
 		return nil, err
 	}
+	if previousPrismEnabled != updated.IsPrismEnabled() || previousPrismCookie != updated.GetCredential(prismCookieKey) || input.ProxyID != nil || updated.Status != StatusActive {
+		prismbridge.Default.Stop(id)
+	}
 	return updated, nil
 }
 
@@ -954,6 +972,9 @@ func (s *adminServiceImpl) UpdateAccountExtra(ctx context.Context, id int64, upd
 		}
 	}
 	delete(updates, OpenAIWarmupStateKey)
+	if _, exists := updates[prismEnabledKey]; exists {
+		return infraerrors.BadRequest("PRISM_USE_ACCOUNT_EDIT", "Change Prism settings using the account editor")
+	}
 	updates = MergeOpenAICodexTicketExtra(updates, nil)
 	updates = sanitizedCodexFingerprintExtraUpdates(updates)
 	updates = stripOpenAIAutoResetCreditManagedExtra(updates, true)
@@ -983,6 +1004,15 @@ func (s *adminServiceImpl) UpdateAccountExtra(ctx context.Context, id int64, upd
 // BulkUpdateAccounts updates multiple accounts in one request.
 // It merges credentials/extra keys instead of overwriting the whole object.
 func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUpdateAccountsInput) (*BulkUpdateAccountsResult, error) {
+	if input == nil {
+		return nil, infraerrors.BadRequest("INVALID_REQUEST", "bulk account update input is required")
+	}
+	if _, exists := input.Extra[prismEnabledKey]; exists {
+		return nil, infraerrors.BadRequest("PRISM_USE_ACCOUNT_EDIT", "Configure Prism individually for each account")
+	}
+	if _, exists := input.Credentials[prismCookieKey]; exists {
+		return nil, infraerrors.BadRequest("PRISM_USE_ACCOUNT_EDIT", "Import Prism login individually for each account")
+	}
 	// Managed probe/session state may only enter through dedicated typed endpoints.
 	input.Extra = MergeOpenAICodexTicketExtra(input.Extra, nil)
 	input.Extra = sanitizedCodexFingerprintExtraUpdates(input.Extra)
@@ -1345,6 +1375,7 @@ func (s *adminServiceImpl) DeleteAccount(ctx context.Context, id int64) error {
 	if err := s.accountRepo.Delete(ctx, id); err != nil {
 		return err
 	}
+	prismbridge.Default.Stop(id)
 	return nil
 }
 

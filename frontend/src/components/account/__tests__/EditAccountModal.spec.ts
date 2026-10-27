@@ -1200,6 +1200,24 @@ describe('EditAccountModal', () => {
     })
   })
 
+  it.each(['force_chat_completions', 'force_responses', 'auto'])('saves OAuth route %s without API key capabilities', async (mode) => {
+    const account = buildAccount()
+    account.type = 'oauth'
+    account.extra = { openai_responses_mode: 'force_chat_completions' }
+    updateAccountMock.mockReset()
+    checkMixedChannelRiskMock.mockResolvedValue({ has_risk: false })
+    updateAccountMock.mockResolvedValue(account)
+    const wrapper = mountModal(account)
+    const select = wrapper.get('[data-testid="openai-responses-mode-select"]')
+    expect((select.element as HTMLSelectElement).value).toBe('force_chat_completions')
+    expect(wrapper.find('[data-testid="openai-endpoint-capability-embeddings"]').exists()).toBe(false)
+    await select.setValue(mode)
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+    expect(updateAccountMock).toHaveBeenCalledOnce()
+    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.openai_responses_mode).toBe(mode === 'auto' ? undefined : mode)
+    wrapper.unmount()
+  })
+
   it('submits OpenAI APIKey Responses support override mode', async () => {
     const account = buildAccount()
     account.extra = {
@@ -1909,6 +1927,50 @@ describe('EditAccountModal OpenAI 自动使用重置卡', () => {
     expect(updateAccountMock).not.toHaveBeenCalled()
     wrapper.unmount()
   })
+  it('saves Prism credentials separately and preserves them when disabling', async () => {
+    const account = buildAccount()
+    account.type = 'oauth'
+    account.extra = { prism_enabled: true }
+    account.credentials_status = { has_prism_cookie: true, has_access_token: true }
+    updateAccountMock.mockReset()
+    updateAccountMock.mockResolvedValue(account)
+    checkMixedChannelRiskMock.mockResolvedValue({ has_risk: false })
+    const wrapper = mountModal(account)
+    expect(wrapper.get('[data-testid="prism-toggle"]').attributes('aria-checked')).toBe('true')
+    expect((wrapper.get('[data-testid="prism-cookie"]').element as HTMLInputElement).value).toBe('')
+    await wrapper.get('[data-testid="prism-cookie"]').setValue('prism_oai_access_token=new-login')
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+    expect(updateAccountMock.mock.calls[0]?.[1]?.credentials?.prism_cookie).toBe('prism_oai_access_token=new-login')
+    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.prism_enabled).toBe(true)
+    wrapper.unmount()
+
+    updateAccountMock.mockReset()
+    updateAccountMock.mockResolvedValue(account)
+    const reopened = mountModal(account)
+    await reopened.get('[data-testid="prism-toggle"]').trigger('click')
+    await reopened.get('form#edit-account-form').trigger('submit.prevent')
+    expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.prism_enabled).toBe(false)
+    expect(updateAccountMock.mock.calls[0]?.[1]?.credentials).not.toHaveProperty('prism_cookie')
+    reopened.unmount()
+  })
+
+  it('saves the completed Prism login ticket with the target account', async () => {
+    const account = buildAccount()
+    account.type = 'oauth'
+    account.extra = { prism_enabled: true }
+    updateAccountMock.mockReset()
+    updateAccountMock.mockResolvedValue(account)
+    checkMixedChannelRiskMock.mockResolvedValue({ has_risk: false })
+    const wrapper = mountModal(account)
+    const settings = wrapper.findComponent({ name: 'PrismAccountSettings' })
+    expect(settings.props('accountId')).toBe(account.id)
+    settings.vm.$emit('update:loginSession', 'completed-ticket')
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+    expect(updateAccountMock.mock.calls[0]?.[1]?.prism_login_session).toBe('completed-ticket')
+    expect(updateAccountMock.mock.calls[0]?.[1]?.credentials).not.toHaveProperty('prism_cookie')
+    wrapper.unmount()
+  })
+
 })
 
 describe('EditAccountModal gemini explicit cache upstream switch', () => {

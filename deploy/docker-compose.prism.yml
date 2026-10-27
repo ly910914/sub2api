@@ -1,0 +1,14 @@
+# Combine with docker-compose.yml (from deploy/), then build the prism target.
+services:
+  sub2api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: prism
+    image: sub2api:prism-local
+    init: true
+    shm_size: 1gb
+    environment:
+      SUB2API_PRISM_PYTHON: python3
+      SUB2API_PRISM_DATA_DIR: /app/data/prism
+      SUB2API_PRISM_MAX_WORKERS: ${SUB2API_PRISM_MAX_WORKERS:-4}

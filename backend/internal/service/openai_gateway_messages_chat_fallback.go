@@ -61,6 +61,10 @@ func (s *OpenAIGatewayService) forwardAnthropicViaRawChatCompletions(
 		return nil, fmt.Errorf("convert anthropic to chat completions: %w", err)
 	}
 
+	if account.UsesOAuthChatBridge() {
+		return s.forwardOAuthChatBridge(ctx, c, account, chatReq, nil, nil, defaultMappedModel, startTime)
+	}
+
 	billingModel := resolveOpenAIForwardModel(account, anthropicReq.Model, defaultMappedModel)
 	upstreamModel := normalizeOpenAIModelForUpstream(account, billingModel)
 	if err := validateGPT61SolCompatRequest(body, upstreamModel); err != nil {

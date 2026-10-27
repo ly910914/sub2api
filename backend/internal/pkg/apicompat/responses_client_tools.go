@@ -845,12 +845,12 @@ func (r *ResponsesClientToolStreamRestorer) restoreNamespaceEvent(event Response
 	if len(r.adapter.NamespaceTools) == 0 {
 		return event
 	}
-	if event.Item != nil && event.Item.Type == "function_call" {
+	if event.Item != nil && (event.Item.Type == "function_call" || event.Item.Type == "custom_tool_call") {
 		if name, ok := r.adapter.NamespaceTools[event.Item.Name]; ok {
 			event.Item.Name, event.Item.Namespace = name.Name, name.Namespace
 		}
 	}
-	if event.Type == "response.function_call_arguments.delta" || event.Type == "response.function_call_arguments.done" {
+	if event.Type == "response.function_call_arguments.delta" || event.Type == "response.function_call_arguments.done" || event.Type == "response.custom_tool_call_input.done" {
 		if name, ok := r.adapter.NamespaceTools[event.Name]; ok {
 			event.Name = name.Name
 		}
@@ -876,7 +876,7 @@ func restoreResponsesOutputClientTools(outputs []ResponsesOutput, adapter *Respo
 			output.Name = ""
 			output.Namespace = ""
 		}
-		if name, ok := adapter.NamespaceTools[output.Name]; ok && output.Type == "function_call" {
+		if name, ok := adapter.NamespaceTools[output.Name]; ok && (output.Type == "function_call" || output.Type == "custom_tool_call") {
 			output.Name, output.Namespace = name.Name, name.Namespace
 		}
 	}

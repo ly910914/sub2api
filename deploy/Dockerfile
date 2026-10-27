@@ -79,7 +79,29 @@ RUN VERSION_VALUE="${VERSION}" && \
     ./cmd/server
 
 # -----------------------------------------------------------------------------
-# Stage 3: Final Runtime Image
+# Optional Prism runtime: docker build --target prism -f deploy/Dockerfile .
+# Playwright requires glibc; keep it separate from the default Alpine image.
+# -----------------------------------------------------------------------------
+FROM mcr.microsoft.com/playwright/python:v1.58.0-noble AS prism
+RUN pip install --no-cache-dir playwright==1.58.0 && \
+    apt-get update && apt-get install -y --no-install-recommends gosu ca-certificates tzdata curl xvfb && \
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd --gid 1001 sub2api && useradd --uid 1001 --gid sub2api --create-home sub2api
+WORKDIR /app
+COPY --from=backend-builder /app/sub2api /app/sub2api
+COPY --from=backend-builder /app/backend/resources /app/resources
+COPY backend/internal/pkg/prismbridge/scripts/ /app/prism-login/
+COPY deploy/prism-entrypoint.sh /app/prism-entrypoint.sh
+RUN mkdir -p /app/data && chown -R sub2api:sub2api /app && chmod +x /app/prism-entrypoint.sh
+ENV SUB2API_PRISM_PYTHON=python3 SUB2API_PRISM_DATA_DIR=/app/data/prism
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -fsS http://localhost:${SERVER_PORT:-8080}/health || exit 1
+ENTRYPOINT ["/app/prism-entrypoint.sh"]
+CMD ["/app/sub2api"]
+
+# -----------------------------------------------------------------------------
+# Stage 3: Final Runtime Image (default, without browser dependencies)
 # -----------------------------------------------------------------------------
 FROM ${ALPINE_IMAGE}
 

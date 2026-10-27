@@ -362,6 +362,11 @@ func registerGroupRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 }
 
 func registerAccountRoutes(admin *gin.RouterGroup, h *handler.Handlers, stepUpAuth middleware.StepUpAuthMiddleware) {
+	prism := admin.Group("/prism/login")
+	prism.POST("", h.Admin.Account.CreatePrismLogin)
+	prism.GET("/:session", h.Admin.Account.GetPrismLogin)
+	prism.POST("/:session/action", h.Admin.Account.PrismLoginAction)
+	prism.DELETE("/:session", h.Admin.Account.CancelPrismLogin)
 	accounts := admin.Group("/accounts")
 	{
 		accounts.GET("", h.Admin.Account.List)

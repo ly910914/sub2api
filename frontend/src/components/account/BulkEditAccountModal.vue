@@ -1090,8 +1090,8 @@
         </div>
       </div>
 
-      <!-- OpenAI API Key Responses route -->
-      <div v-if="allOpenAIAPIKey" class="border-t border-gray-200 pt-4 dark:border-dark-600">
+      <!-- OpenAI account Responses route -->
+      <div v-if="allOpenAIResponsesModeCapable" class="border-t border-gray-200 pt-4 dark:border-dark-600">
         <div class="mb-3 flex items-center justify-between gap-4">
           <div class="flex-1">
             <label
@@ -1594,6 +1594,13 @@ const allOpenAIOAuthOnly = computed(() => {
   )
 })
 
+const allOpenAIResponsesModeCapable = computed(() =>
+  targetSelectedPlatforms.value.length === 1 &&
+  targetSelectedPlatforms.value[0] === 'openai' &&
+  targetSelectedTypes.value.length > 0 &&
+  targetSelectedTypes.value.every(t => t === 'apikey' || t === 'oauth')
+)
+
 const allOpenAIAPIKey = computed(() => {
   return (
     targetSelectedPlatforms.value.length === 1 &&
@@ -1807,7 +1814,7 @@ const openAITextGenerationCapabilityEnabled = computed(() =>
   openAIEndpointCapabilities.value.includes('chat_completions')
 )
 const openAIResponsesModeApplicable = computed(
-  () => !enableOpenAIEndpointCapabilities.value || openAITextGenerationCapabilityEnabled.value
+  () => !allOpenAIAPIKey.value || !enableOpenAIEndpointCapabilities.value || openAITextGenerationCapabilityEnabled.value
 )
 
 const normalizeOpenAIEndpointCapabilities = (values: OpenAIEndpointCapability[]) => {
@@ -1943,7 +1950,7 @@ const buildUpdatePayload = (): Record<string, unknown> | null => {
     enableOpenAILongContextBilling.value && allOpenAIPassthroughCapable.value
   const applyOpenAIEndpointCapabilities =
     enableOpenAIEndpointCapabilities.value && allOpenAIAPIKey.value
-  const applyOpenAIResponsesMode = enableOpenAIResponsesMode.value && allOpenAIAPIKey.value
+  const applyOpenAIResponsesMode = enableOpenAIResponsesMode.value && allOpenAIResponsesModeCapable.value
   const ensureExtra = (): Record<string, unknown> => {
     if (!updates.extra) {
       updates.extra = {}
@@ -2223,7 +2230,7 @@ const handleSubmit = async () => {
     enableOpenAIFlattenNamespaces.value ||
     (enableOpenAILongContextBilling.value && allOpenAIPassthroughCapable.value) ||
     (enableOpenAIEndpointCapabilities.value && allOpenAIAPIKey.value) ||
-    (enableOpenAIResponsesMode.value && allOpenAIAPIKey.value) ||
+    (enableOpenAIResponsesMode.value && allOpenAIResponsesModeCapable.value) ||
     enableModelRestriction.value ||
     enableCustomErrorCodes.value ||
     enableInterceptWarmup.value ||

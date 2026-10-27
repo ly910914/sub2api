@@ -445,7 +445,7 @@ describe('BulkEditAccountModal', () => {
     expect(mixed.find('#bulk-edit-openai-responses-mode-enabled').exists()).toBe(false)
   })
 
-  it('端点能力与 Responses 路由仅对全部 OpenAI API Key 目标展示', () => {
+  it('OAuth 可设置 Responses 路由，但不展示 API Key 端点能力', () => {
     const apiKey = mountModal({
       selectedPlatforms: ['openai'],
       selectedTypes: ['apikey']
@@ -459,7 +459,7 @@ describe('BulkEditAccountModal', () => {
       selectedTypes: ['oauth']
     })
     expect(oauth.find('#bulk-edit-openai-endpoint-capabilities-enabled').exists()).toBe(false)
-    expect(oauth.find('#bulk-edit-openai-responses-mode-enabled').exists()).toBe(false)
+    expect(oauth.find('#bulk-edit-openai-responses-mode-enabled').exists()).toBe(true)
   })
 
   it('长上下文设置独立启用并提交布尔值', async () => {
@@ -555,6 +555,17 @@ describe('BulkEditAccountModal', () => {
       credentials: { openai_capabilities: ['embeddings'] },
       extra: { openai_responses_mode: null }
     })
+  })
+
+  it.each([['oauth'], ['oauth', 'apikey']])('saves Chat routing for OpenAI targets %s', async (...types) => {
+    const wrapper = mountModal({ selectedPlatforms: ['openai'], selectedTypes: types })
+    expect(wrapper.find('#bulk-edit-openai-endpoint-capabilities-enabled').exists()).toBe(false)
+    await wrapper.get('#bulk-edit-openai-responses-mode-enabled').setValue(true)
+    await wrapper.get('[data-testid="bulk-edit-openai-responses-mode-select"]').setValue('force_chat_completions')
+    await wrapper.get('#bulk-edit-account-form').trigger('submit.prevent')
+    await flushPromises()
+    expect(adminAPI.accounts.bulkUpdate).toHaveBeenCalledWith([1, 2], { extra: { openai_responses_mode: 'force_chat_completions' } })
+    wrapper.unmount()
   })
 
   it('persists Seedance in a two-capability bulk update', async () => {

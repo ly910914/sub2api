@@ -2014,9 +2014,15 @@
         </div>
       </div>
 
-      <!-- OpenAI APIKey Responses API support mode -->
+      <!-- OpenAI account Responses routing -->
+      <PrismAccountSettings
+        v-if="account?.platform === 'openai' && !isSparkShadow && ['oauth', 'setup-token', 'apikey'].includes(account?.type || '')"
+        v-model:enabled="prismEnabled" v-model:cookie="prismCookie"
+        v-model:login-session="prismLoginSession" :proxy-id="form.proxy_id" :account-id="account?.id"
+        :saved="account?.credentials_status?.has_prism_cookie === true"
+      />
       <div
-        v-if="account?.platform === 'openai' && account?.type === 'apikey'"
+        v-if="account?.platform === 'openai' && (account?.type === 'apikey' || account?.type === 'oauth')"
         class="space-y-4 border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between gap-4">
@@ -2036,19 +2042,19 @@
           </div>
         </div>
         <div
-          v-if="openAITextGenerationCapabilityEnabled"
+          v-if="account?.type === 'apikey' && openAITextGenerationCapabilityEnabled"
           class="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:bg-dark-700 dark:text-gray-300"
         >
           <span class="font-medium">{{ t(openAIResponsesStatusKey) }}</span>
         </div>
         <div
-          v-else
+          v-else-if="account?.type === 'apikey'"
           class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
           data-testid="openai-responses-mode-not-applicable"
         >
           {{ t('admin.accounts.openai.responsesModeTextDisabledHint') }}
         </div>
-        <div>
+        <div v-if="account?.type === 'apikey'">
           <label class="input-label mb-2 block">{{ t('admin.accounts.openai.endpointCapabilities') }}</label>
           <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <label
@@ -3269,6 +3275,7 @@ import { readAccountWarmup } from '@/components/account/accountWarmup'
 import Toggle from '@/components/common/Toggle.vue'
 import Icon from '@/components/icons/Icon.vue'
 import ProxySelector from '@/components/common/ProxySelector.vue'
+import PrismAccountSettings from '@/components/account/PrismAccountSettings.vue'
 import CodexAccountTicketSettings from '@/components/account/CodexAccountTicketSettings.vue'
 import ProxyAdBanner from '@/components/common/ProxyAdBanner.vue'
 import GroupSelector from '@/components/common/GroupSelector.vue'
@@ -3864,6 +3871,9 @@ const openAILongContextBillingEnabled = ref(false)
 // OpenAI 订阅档位（Plus / Pro 20x / Pro 5x / Business Standard / Business Premium / Free）手动覆盖值,
 // 存于 credentials.plan_type;'' 表示清空/自动识别
 const editPlanType = ref<string>('')
+const prismEnabled = ref(false)
+const prismCookie = ref('')
+const prismLoginSession = ref('')
 const openAICompactMode = ref<OpenAICompactMode>('auto')
 const openAIResponsesMode = ref<OpenAIResponsesMode>('auto')
 // Images 非流式响应缺 b64_json 时由网关下载 url 回填（仅 OpenAI API Key）。
@@ -4033,7 +4043,7 @@ const openAIEndpointCapabilityOptions = computed<{ value: OpenAIEndpointCapabili
   { value: 'seedance', label: 'Seedance (Ark)' }
 ])
 const openAITextGenerationCapabilityEnabled = computed(() =>
-  openAIEndpointCapabilities.value.includes('chat_completions')
+  props.account?.type === 'oauth' || openAIEndpointCapabilities.value.includes('chat_completions')
 )
 
 const normalizeOpenAIEndpointCapabilities = (values: OpenAIEndpointCapability[]) => {
@@ -4308,6 +4318,9 @@ const syncFormFromAccount = (newAccount: Account | null) => {
   mixedChannelWarningDetails.value = null
   mixedChannelWarningRawMessage.value = ''
   mixedChannelWarningAction.value = null
+  prismEnabled.value = newAccount.extra?.prism_enabled === true
+  prismCookie.value = ''
+  prismLoginSession.value = ''
   form.name = newAccount.name
   form.notes = newAccount.notes || ''
   form.proxy_id = newAccount.proxy_id
@@ -4387,8 +4400,8 @@ const syncFormFromAccount = (newAccount: Account | null) => {
       ? readPlanType(newAccount.credentials as Record<string, unknown> | undefined)
       : ''
     openAICompactMode.value = (extra?.openai_compact_mode as OpenAICompactMode) || 'auto'
+    openAIResponsesMode.value = normalizeOpenAIResponsesMode(extra?.openai_responses_mode)
     if (newAccount.type === 'apikey') {
-      openAIResponsesMode.value = normalizeOpenAIResponsesMode(extra?.openai_responses_mode)
       openAIEndpointCapabilities.value = readOpenAIEndpointCapabilities(
         newAccount.credentials as Record<string, unknown> | undefined
       )
@@ -5325,6 +5338,15 @@ const submitUpdateAccount = async (accountID: number, updatePayload: Record<stri
       updatePayload.extra = { ...((updatePayload.extra ?? props.account.extra ?? {}) as Record<string, unknown>), openai_warmup: { ...warmup.value } }
     }
   }
+  if (props.account?.platform === 'openai' && !isSparkShadow.value) {
+    updatePayload.extra = { ...(updatePayload.extra as Record<string, unknown> || props.account.extra || {}), prism_enabled: prismEnabled.value }
+    if (prismEnabled.value && prismLoginSession.value) {
+      updatePayload.prism_login_session = prismLoginSession.value
+    }
+    if (prismCookie.value.trim()) {
+      updatePayload.credentials = { ...(updatePayload.credentials as Record<string, unknown> || props.account.credentials || {}), prism_cookie: prismCookie.value.trim() }
+    }
+  }
   submitting.value = true
   try {
     let updatedAccount = await adminAPI.accounts.update(accountID, withAntigravityConfirmFlag(updatePayload))
@@ -5442,7 +5464,7 @@ const handleSubmit = async () => {
         props.account.credentials_status?.has_api_key ?? Boolean(currentCredentials.api_key)
       if (editApiKey.value.trim()) {
         newCredentials.api_key = editApiKey.value.trim()
-      } else if (!hasExistingApiKey) {
+      } else if (!prismEnabled.value && !hasExistingApiKey) {
         appStore.showError(t('admin.accounts.apiKeyIsRequired'))
         return
       }
@@ -5950,12 +5972,14 @@ const handleSubmit = async () => {
       } else {
         newExtra.openai_compact_mode = openAICompactMode.value
       }
-		if (props.account.type === 'apikey') {
+      if (props.account.type === 'apikey' || props.account.type === 'oauth') {
         if (!openAITextGenerationCapabilityEnabled.value || openAIResponsesMode.value === 'auto') {
           delete newExtra.openai_responses_mode
         } else {
           newExtra.openai_responses_mode = openAIResponsesMode.value
         }
+      }
+      if (props.account.type === 'apikey') {
         if (openAIImagesUrlToB64JsonEnabled.value) {
           newExtra.images_url_to_b64_json = true
         } else {

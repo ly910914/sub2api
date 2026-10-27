@@ -406,6 +406,7 @@ type ResponsesOutput struct {
 	Role    string                 `json:"role,omitempty"`
 	Content []ResponsesContentPart `json:"content,omitempty"`
 	Status  string                 `json:"status,omitempty"`
+	Phase   string                 `json:"phase,omitempty"`
 
 	// type=reasoning
 	EncryptedContent string             `json:"encrypted_content,omitempty"`
@@ -823,6 +824,8 @@ type ChatCompletionsChunk struct {
 	Usage             *ChatUsage        `json:"usage,omitempty"`
 	SystemFingerprint string            `json:"system_fingerprint,omitempty"`
 	ServiceTier       string            `json:"service_tier,omitempty"`
+	// Populated only between the in-process OAuth bridge and its writer.
+	ResponsesEvent json.RawMessage `json:"_responses_event,omitempty"`
 }
 
 // ChatChunkChoice is a single choice in a streaming chunk.
