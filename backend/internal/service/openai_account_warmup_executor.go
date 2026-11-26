@@ -117,7 +117,7 @@ func (s *AccountTestService) ExecuteOpenAIWarmupTurn(ctx context.Context, accoun
 		} else {
 			inbound.Header.Set("Authorization", "Bearer "+token)
 		}
-		account.ApplyHeaderOverrides(inbound.Header)
+		account.ApplyHeaderOverrides(inbound.Context(), inbound.Header)
 		proxyURL := ""
 		if account.Proxy != nil {
 			proxyURL = account.Proxy.URL()

@@ -33,7 +33,7 @@ func oauthChatTestUpstream() *httpUpstreamRecorder {
 		`data: {"type":"response.created","response":{"id":"resp_test","model":"gpt-5.5","status":"in_progress","output":[]}}`,
 		`data: {"type":"response.output_item.added","output_index":0,"item":{"id":"msg_test","type":"message","role":"assistant","content":[]}}`,
 		`data: {"type":"response.output_text.delta","item_id":"msg_test","output_index":0,"content_index":0,"delta":"hello"}`,
-		`data: {"type":"response.completed","response":{"id":"resp_test","object":"response","model":"gpt-5.5","status":"completed","output":[{"type":"message","id":"msg_test","role":"assistant","status":"completed","content":[{"type":"output_text","text":"hello"}]}],"usage":{"input_tokens":5,"output_tokens":2,"total_tokens":7}}}`,
+		`data: {"type":"response.completed","response":{"id":"resp_test","object":"response","model":"gpt-5.5","status":"completed","output":[{"type":"message","id":"msg_test","role":"assistant","status":"completed","content":[{"type":"output_text","text":"hello","annotations":[],"logprobs":[]}]}],"usage":{"input_tokens":5,"output_tokens":2,"total_tokens":7}}}`,
 	}, "\n\n") + "\n\n"
 	return &httpUpstreamRecorder{resp: &http.Response{StatusCode: 200, Header: http.Header{"Content-Type": []string{"text/event-stream"}, "X-Request-Id": []string{"test-request"}}, Body: io.NopCloser(strings.NewReader(payload))}}
 }
